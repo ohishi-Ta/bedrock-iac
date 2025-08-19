@@ -11,6 +11,7 @@ import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import { Construct } from 'constructs';
 import { Duration, RemovalPolicy, CustomResource } from 'aws-cdk-lib';
 import { EnvironmentConfig } from '../config/environment-config';
+import * as path from 'path';
 
 export interface DbInitializerConstructProps {
   vpc: ec2.IVpc;
@@ -33,6 +34,7 @@ export class DbInitializerConstruct extends Construct {
     // NodejsFunctionはデフォルトで同じディレクトリの
     // {construct-id}.function.ts ファイルを探す
     this.initializerFunction = new lambdaNodejs.NodejsFunction(this, 'DbInitializer', {
+      entry: path.join(__dirname, 'db-initializer.function.ts'),
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handler',
       timeout: Duration.minutes(5),
