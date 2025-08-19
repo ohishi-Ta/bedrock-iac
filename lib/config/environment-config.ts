@@ -63,7 +63,7 @@ export interface EnvironmentConfig {
 // 共通のデフォルト設定
 export const commonDefaults = {
   network: {
-    availabilityZones: ['ap-northeast-1a', 'ap-northeast-1c'],
+    availabilityZones: ['us-west-2a', 'us-west-2c'],
     createVpcEndpoints: false,
     naming: {
       // 基本形（環境名は各configで上書き）
