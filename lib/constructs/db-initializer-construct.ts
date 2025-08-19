@@ -11,7 +11,6 @@ import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import { Construct } from 'constructs';
 import { Duration, RemovalPolicy, CustomResource } from 'aws-cdk-lib';
 import { EnvironmentConfig } from '../config/environment-config';
-import path = require('path');
 
 export interface DbInitializerConstructProps {
   vpc: ec2.IVpc;
@@ -31,10 +30,11 @@ export class DbInitializerConstruct extends Construct {
     const { vpc, lambdaSecurityGroup, cluster, masterSecret, config } = props;
 
     // Lambda関数を作成
-    this.initializerFunction = new lambdaNodejs.NodejsFunction(this, 'DbInitializerFunction', {
+    // NodejsFunctionはデフォルトで同じディレクトリの
+    // {construct-id}.function.ts ファイルを探す
+    this.initializerFunction = new lambdaNodejs.NodejsFunction(this, 'DbInitializer', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'handler',
-      entry: path.join(__dirname, '../../lambda/db-initializer/index.ts'),
       timeout: Duration.minutes(5),
       memorySize: 256,
       vpc: vpc,
@@ -46,10 +46,12 @@ export class DbInitializerConstruct extends Construct {
         NODE_OPTIONS: '--enable-source-maps',
       },
       bundling: {
-        externalModules: [],
-        nodeModules: ['pg', '@aws-sdk/client-secrets-manager'],
+        nodeModules: ['pg'],
         minify: false,
         sourceMap: true,
+        externalModules: [
+          '@aws-sdk/client-secrets-manager', // AWS SDKはLambda環境に含まれている
+        ],
       },
       logRetention: logs.RetentionDays.ONE_WEEK,
     });

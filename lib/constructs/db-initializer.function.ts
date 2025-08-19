@@ -1,8 +1,9 @@
-// lambda/db-initializer/index.ts
+// lib/constructs/db-initializer.function.ts
 
 import { Client } from 'pg';
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 import { Context } from 'aws-lambda';
+import * as https from 'https';
 
 const secretsManager = new SecretsManagerClient({});
 
@@ -41,17 +42,6 @@ interface CustomResourceDeleteEvent extends CustomResourceEventBase {
 }
 
 type CustomResourceEvent = CustomResourceCreateEvent | CustomResourceUpdateEvent | CustomResourceDeleteEvent;
-
-interface CustomResourceResponse {
-  Status: 'SUCCESS' | 'FAILED';
-  Reason?: string;
-  PhysicalResourceId: string;
-  StackId: string;
-  RequestId: string;
-  LogicalResourceId: string;
-  NoEcho?: boolean;
-  Data?: Record<string, any>;
-}
 
 /**
  * Secrets Managerからシークレットを取得
@@ -167,12 +157,65 @@ function getPhysicalResourceId(event: CustomResourceEvent): string {
 }
 
 /**
+ * CloudFormation Custom Resource Response送信
+ */
+async function sendResponse(
+  event: CustomResourceEvent,
+  context: Context,
+  responseStatus: 'SUCCESS' | 'FAILED',
+  responseData?: any,
+  physicalResourceId?: string,
+  reason?: string
+): Promise<void> {
+  const responseUrl = event.ResponseURL;
+  
+  const responseBody = JSON.stringify({
+    Status: responseStatus,
+    Reason: reason || `See CloudWatch Log Stream: ${context.logStreamName}`,
+    PhysicalResourceId: physicalResourceId || context.logStreamName,
+    StackId: event.StackId,
+    RequestId: event.RequestId,
+    LogicalResourceId: event.LogicalResourceId,
+    NoEcho: false,
+    Data: responseData,
+  });
+
+  const parsedUrl = new URL(responseUrl);
+  const options = {
+    hostname: parsedUrl.hostname,
+    port: 443,
+    path: parsedUrl.pathname + parsedUrl.search,
+    method: 'PUT',
+    headers: {
+      'content-type': '',
+      'content-length': responseBody.length.toString(),
+    },
+  };
+
+  return new Promise((resolve, reject) => {
+    const request = https.request(options, (response) => {
+      console.log(`Status code: ${response.statusCode}`);
+      console.log(`Status message: ${response.statusMessage}`);
+      resolve();
+    });
+
+    request.on('error', (error) => {
+      console.log('Send response error:', error);
+      reject(error);
+    });
+
+    request.write(responseBody);
+    request.end();
+  });
+}
+
+/**
  * CloudFormation Custom Resource ハンドラー
  */
 export async function handler(
   event: CustomResourceEvent,
   context: Context
-): Promise<CustomResourceResponse> {
+): Promise<void> {
   console.log('Event:', JSON.stringify(event, null, 2));
 
   const physicalResourceId = getPhysicalResourceId(event);
@@ -189,33 +232,33 @@ export async function handler(
           MasterSecretArn as string
         );
         
-        return {
-          Status: 'SUCCESS',
-          PhysicalResourceId: physicalResourceId,
-          StackId: event.StackId,
-          RequestId: event.RequestId,
-          LogicalResourceId: event.LogicalResourceId,
-          Data: {
+        await sendResponse(
+          event,
+          context,
+          'SUCCESS',
+          {
             Message: 'Database initialized successfully with pgvector and Bedrock Knowledge Base schema',
             Timestamp: new Date().toISOString()
-          }
-        };
+          },
+          physicalResourceId
+        );
+        break;
 
       case 'Delete':
         // 削除時は特に何もしない（データは保持）
         console.log('Delete request received. Keeping data intact.');
         
-        return {
-          Status: 'SUCCESS',
-          PhysicalResourceId: physicalResourceId,
-          StackId: event.StackId,
-          RequestId: event.RequestId,
-          LogicalResourceId: event.LogicalResourceId,
-          Data: {
+        await sendResponse(
+          event,
+          context,
+          'SUCCESS',
+          {
             Message: 'Delete request processed (data retained)',
             Timestamp: new Date().toISOString()
-          }
-        };
+          },
+          physicalResourceId
+        );
+        break;
 
       default:
         // TypeScriptの exhaustiveness check
@@ -226,13 +269,13 @@ export async function handler(
   } catch (error) {
     console.error('Error:', error);
     
-    return {
-      Status: 'FAILED',
-      Reason: error instanceof Error ? error.message : 'Unknown error',
-      PhysicalResourceId: physicalResourceId,
-      StackId: event.StackId,
-      RequestId: event.RequestId,
-      LogicalResourceId: event.LogicalResourceId
-    };
+    await sendResponse(
+      event,
+      context,
+      'FAILED',
+      undefined,
+      physicalResourceId,
+      error instanceof Error ? error.message : 'Unknown error'
+    );
   }
 }
