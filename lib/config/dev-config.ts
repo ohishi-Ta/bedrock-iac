@@ -31,7 +31,6 @@ export const devConfig: EnvironmentConfig = {
       clusterName: 'cpi-bedrock-dev-cluster',
       subnetGroupName: 'cpi-bedrock-dev-subnet-group',
       masterSecretName: 'cpi-bedrock-dev-master-secret',
-      appUserSecretName: 'cpi-bedrock-dev-app-secret',
     },
   },
   

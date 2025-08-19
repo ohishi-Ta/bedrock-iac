@@ -31,6 +31,7 @@ const databaseStack = new DatabaseStack(app, `${config.environment}-database-sta
   config,
   vpc: networkStack.networkConstruct.vpc,
   auroraSecurityGroup: networkStack.networkConstruct.auroraSecurityGroup,
+  lambdaSecurityGroup: networkStack.networkConstruct.lambdaSecurityGroup,
   description: `Database infrastructure for ${config.environment} environment`,
 });
 

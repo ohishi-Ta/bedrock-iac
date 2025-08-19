@@ -37,7 +37,6 @@ export interface EnvironmentConfig {
       clusterName: string;
       subnetGroupName: string;
       masterSecretName: string;
-      appUserSecretName: string;
     };
   };
   

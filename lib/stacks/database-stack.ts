@@ -4,26 +4,38 @@ import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import { Construct } from 'constructs';
 import { AuroraConstruct } from '../constructs/aurora-construct';
+import { DbInitializerConstruct } from '../constructs/db-initializer-construct';
 import { EnvironmentConfig } from '../config/environment-config';
 
 export interface DatabaseStackProps extends cdk.StackProps {
   config: EnvironmentConfig;
   vpc: ec2.IVpc;
   auroraSecurityGroup: ec2.ISecurityGroup;
+  lambdaSecurityGroup: ec2.ISecurityGroup;
 }
 
 export class DatabaseStack extends cdk.Stack {
   public readonly auroraConstruct: AuroraConstruct;
+  public readonly dbInitializerConstruct: DbInitializerConstruct;
 
   constructor(scope: Construct, id: string, props: DatabaseStackProps) {
     super(scope, id, props);
 
-    const { config, vpc, auroraSecurityGroup } = props;
+    const { config, vpc, auroraSecurityGroup, lambdaSecurityGroup } = props;
 
     // Aurora構築
     this.auroraConstruct = new AuroraConstruct(this, 'Aurora', {
       vpc,
       securityGroup: auroraSecurityGroup,
+      config,
+    });
+
+    // データベース初期化（pgvector有効化、スキーマ・テーブル作成）
+    this.dbInitializerConstruct = new DbInitializerConstruct(this, 'DbInitializer', {
+      vpc,
+      lambdaSecurityGroup,
+      cluster: this.auroraConstruct.cluster,
+      masterSecret: this.auroraConstruct.masterSecret,
       config,
     });
 
@@ -46,16 +58,15 @@ export class DatabaseStack extends cdk.Stack {
       exportName: `${config.environment}-master-secret-arn`,
     });
 
-    new cdk.CfnOutput(this, 'AppUserSecretArn', {
-      value: this.auroraConstruct.appUserSecret.secretArn,
-      description: 'Application User Secret ARN', 
-      exportName: `${config.environment}-app-secret-arn`,
-    });
-
     new cdk.CfnOutput(this, 'DatabaseName', {
       value: config.aurora.databaseName,
       description: 'Database Name',
       exportName: `${config.environment}-database-name`,
+    });
+
+    new cdk.CfnOutput(this, 'DbInitializationStatus', {
+      value: 'Initialized with pgvector and Bedrock Knowledge Base schema',
+      description: 'Database Initialization Status',
     });
 
     // 共通タグ設定

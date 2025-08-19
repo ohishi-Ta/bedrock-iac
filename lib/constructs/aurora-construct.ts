@@ -16,7 +16,6 @@ export interface AuroraConstructProps {
 export class AuroraConstruct extends Construct {
   public readonly cluster: rds.DatabaseCluster;
   public readonly masterSecret: secretsmanager.ISecret;
-  public readonly appUserSecret: secretsmanager.Secret;
   public readonly subnetGroup: rds.SubnetGroup;
 
   constructor(scope: Construct, id: string, props: AuroraConstructProps) {
@@ -100,19 +99,6 @@ export class AuroraConstruct extends Construct {
       removalPolicy: config.environment === 'dev' 
         ? RemovalPolicy.DESTROY 
         : RemovalPolicy.SNAPSHOT,
-    });
-
-    // アプリケーション用ユーザーのシークレット
-    this.appUserSecret = new secretsmanager.Secret(this, config.aurora.naming.appUserSecretName, {
-      description: 'Aurora application user credentials',
-      generateSecretString: {
-        secretStringTemplate: JSON.stringify({ 
-          username: 'bedrock_user' 
-        }),
-        generateStringKey: 'password',
-        excludeCharacters: '"@\\\'/',
-        passwordLength: 32,
-      },
     });
 
     // カスタムタグ設定

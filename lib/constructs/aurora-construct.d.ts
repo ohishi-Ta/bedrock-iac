@@ -11,7 +11,6 @@ export interface AuroraConstructProps {
 export declare class AuroraConstruct extends Construct {
     readonly cluster: rds.DatabaseCluster;
     readonly masterSecret: secretsmanager.ISecret;
-    readonly appUserSecret: secretsmanager.Secret;
     readonly subnetGroup: rds.SubnetGroup;
     constructor(scope: Construct, id: string, props: AuroraConstructProps);
     private applyTags;
