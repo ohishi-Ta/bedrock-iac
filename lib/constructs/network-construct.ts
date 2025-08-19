@@ -24,6 +24,7 @@ export class NetworkConstruct extends Construct {
     this.vpc = new ec2.Vpc(this, config.network.naming.vpcName, {
       ipAddresses: ec2.IpAddresses.cidr(config.network.vpcCidr),
       availabilityZones: config.network.availabilityZones,
+      restrictDefaultSecurityGroup: true,
       
       subnetConfiguration: [
         {

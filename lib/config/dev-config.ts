@@ -8,7 +8,7 @@ export const devConfig: EnvironmentConfig = {
   network: {
     ...commonDefaults.network,
     vpcCidr: '10.0.0.0/16',
-    enableNatGateway: false, // コスト削減のためNATゲートウェイなし
+    enableNatGateway: false, // NATゲートウェイなし
     
     naming: {
       vpcName: 'cpi-bedrock-dev-vpc',
