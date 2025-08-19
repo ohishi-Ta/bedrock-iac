@@ -47,16 +47,25 @@ export interface EnvironmentConfig {
     enableGuardDuty: boolean;
   };
   
+  // Bedrock設定
+  bedrock: {
+    knowledgeBaseName: string;
+    dataSourceName: string;
+    s3BucketName: string;
+    embeddingModel: string;
+    chunkingStrategy: {
+      type: 'HIERARCHICAL';
+      maxParentTokens: number;
+      maxChildTokens: number;
+      overlapTokens: number;
+    };
+  };
+  
   // 共通タグ
   tags: {
     [key: string]: string;
   };
   
-  // コスト管理
-  cost: {
-    budgetLimitUsd: number;
-    enableBudgetAlerts: boolean;
-  };
 }
 
 // 共通のデフォルト設定
@@ -88,6 +97,15 @@ export const commonDefaults = {
   security: {
     allowedCidrBlocks: ['10.0.0.0/16'],
     enableGuardDuty: false,
+  },
+  bedrock: {
+    embeddingModel: 'amazon.titan-embed-text-v2:0',
+    chunkingStrategy: {
+      type: 'HIERARCHICAL' as const,
+      maxParentTokens: 3000,
+      maxChildTokens: 1000,
+      overlapTokens: 60,
+    },
   },
   tags: {
     Project: 'bedrock-vector-db',

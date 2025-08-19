@@ -8,7 +8,7 @@ export const devConfig: EnvironmentConfig = {
   network: {
     ...commonDefaults.network,
     vpcCidr: '10.0.0.0/16',
-    enableNatGateway: false, // NATゲートウェイなし
+    enableNatGateway: false, // コスト削減のためNATゲートウェイなし
     
     naming: {
       vpcName: 'cpi-bedrock-dev-vpc',
@@ -39,15 +39,17 @@ export const devConfig: EnvironmentConfig = {
     enableVpcFlowLogs: false, // コスト削減
   },
   
+  bedrock: {
+    ...commonDefaults.bedrock,
+    knowledgeBaseName: 'dev-knowledge-base',
+    dataSourceName: 'dev-knowledge-base-data-source',
+    s3BucketName: 'dev-rag-source-us-west-2'
+  },
+  
   tags: {
     ...commonDefaults.tags,
     Environment: 'dev',
     Owner: 'oishi',
     CostCenter: 'development',
-  },
-  
-  cost: {
-    budgetLimitUsd: 100, // 月100ドル上限
-    enableBudgetAlerts: true,
-  },
+  }
 };
