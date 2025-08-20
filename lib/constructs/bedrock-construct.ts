@@ -38,73 +38,74 @@ export class BedrockConstruct extends Construct {
         : RemovalPolicy.RETAIN,
     });
 
-    // Bedrock Knowledge Base用サービスロール
-    this.serviceRole = new iam.Role(this, 'BedrockKnowledgeBaseRole', {
-      roleName: `BedrockKnowledgeBaseRole-${config.environment}`,
-      assumedBy: new iam.ServicePrincipal('bedrock.amazonaws.com', {
-        conditions: {
-          StringEquals: {
-            'aws:SourceAccount': cdk.Stack.of(this).account,
-          },
-          ArnLike: {
-            'aws:SourceArn': [
-              `arn:aws:bedrock:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:knowledge-base/*`,
-            ],
-          },
-        },
-      }),
-      description: 'Service role for Bedrock Knowledge Base',
+    // 1. Bedrock Knowledge Base用 Customer Managed Policy を作成
+    const bedrockKnowledgeBasePolicy = new iam.ManagedPolicy(this, 'BedrockKnowledgeBasePolicy', {
+    managedPolicyName: `BedrockKnowledgeBasePolicy-${config.environment}`,
+    statements: [
+        // S3アクセス権限
+        new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: [
+            's3:GetObject',
+            's3:ListBucket',
+            's3:GetBucketLocation',
+        ],
+        resources: [
+            this.s3Bucket.bucketArn,
+            `${this.s3Bucket.bucketArn}/*`,
+        ],
+        }),
+        // RDS権限
+        new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['rds:DescribeDBClusters'],
+        resources: ['*'], // 必要なら特定クラスターに絞る
+        }),
+        new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: [
+            'rds-data:BatchExecuteStatement',
+            'rds-data:ExecuteStatement',
+        ],
+        resources: [cluster.clusterArn],
+        }),
+        // Secrets Manager権限
+        new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: [
+            'secretsmanager:GetSecretValue',
+            'secretsmanager:DescribeSecret',
+        ],
+        resources: [masterSecret.secretArn],
+        }),
+        // Bedrock権限
+        new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['bedrock:InvokeModel'],
+        resources: [
+            `arn:aws:bedrock:${cdk.Stack.of(this).region}::foundation-model/${config.bedrock.embeddingModel}`,
+        ],
+        }),
+    ],
     });
 
-    // S3アクセス権限
-    this.serviceRole.addToPolicy(new iam.PolicyStatement({
-      effect: iam.Effect.ALLOW,
-      actions: [
-        's3:GetObject',
-        's3:ListBucket',
-        's3:GetBucketLocation',
-      ],
-      resources: [
-        this.s3Bucket.bucketArn,
-        `${this.s3Bucket.bucketArn}/*`,
-      ],
-    }));
-
-    // RDS Data API権限
-    this.serviceRole.addToPolicy(new iam.PolicyStatement({
-    actions: [
-        "rds-data:BatchExecuteStatement",
-        "rds-data:ExecuteStatement"
-    ],
-    resources: [cluster.clusterArn], // rds-data 系はリソース指定できる
-    }));
-
-    // DescribeDBClusters
-    this.serviceRole.addToPolicy(new iam.PolicyStatement({
-    actions: ["rds:DescribeDBClusters"],
-    resources: ["*"],
-    }));
-
-    // Secrets Manager権限
-    this.serviceRole.addToPolicy(new iam.PolicyStatement({
-      effect: iam.Effect.ALLOW,
-      actions: [
-        'secretsmanager:GetSecretValue',
-        'secretsmanager:DescribeSecret',
-      ],
-      resources: [masterSecret.secretArn],
-    }));
-
-    // Bedrock権限
-    this.serviceRole.addToPolicy(new iam.PolicyStatement({
-      effect: iam.Effect.ALLOW,
-      actions: [
-        'bedrock:InvokeModel',
-      ],
-      resources: [
-        `arn:aws:bedrock:${process.env.CDK_DEFAULT_REGION}::foundation-model/${config.bedrock.embeddingModel}`,
-      ],
-    }));
+    // 2. ロール作成時に Customer Managed Policy をアタッチ
+    this.serviceRole = new iam.Role(this, 'BedrockKnowledgeBaseRole', {
+    roleName: `BedrockKnowledgeBaseRole-${config.environment}`,
+    assumedBy: new iam.ServicePrincipal('bedrock.amazonaws.com', {
+        conditions: {
+        StringEquals: {
+            'aws:SourceAccount': cdk.Stack.of(this).account,
+        },
+        ArnLike: {
+            'aws:SourceArn': [
+            `arn:aws:bedrock:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:knowledge-base/*`,
+            ],
+        },
+        },
+    }),
+    managedPolicies: [bedrockKnowledgeBasePolicy], // ←ここでアタッチ
+    });
 
     // Bedrock Knowledge Base作成
     this.knowledgeBase = new bedrock.CfnKnowledgeBase(this, 'KnowledgeBase', {
@@ -130,7 +131,7 @@ export class BedrockConstruct extends Construct {
           resourceArn: cluster.clusterArn,
           credentialsSecretArn: masterSecret.secretArn,
           databaseName: config.aurora.databaseName,
-          tableName: 'bedrock_knowledge_base',
+          tableName: 'bedrock_integration.bedrock_knowledge_base',
           fieldMapping: {
             primaryKeyField: 'id',
             vectorField: 'embedding',
