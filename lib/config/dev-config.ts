@@ -43,7 +43,7 @@ export const devConfig: EnvironmentConfig = {
     ...commonDefaults.bedrock,
     knowledgeBaseName: 'dev-knowledge-base',
     dataSourceName: 'dev-knowledge-base-data-source',
-    s3BucketName: 'dev-rag-source-us-west-2'
+    s3BucketName: 'dev-rag-source-ap-northeast-1'
   },
   
   tags: {
