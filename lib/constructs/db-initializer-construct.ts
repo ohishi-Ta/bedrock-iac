@@ -1,7 +1,6 @@
 // lib/constructs/db-initializer-construct.ts
 
 import * as lambda from 'aws-cdk-lib/aws-lambda';
-import * as lambdaNodejs from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as cr from 'aws-cdk-lib/custom-resources';
@@ -28,49 +27,31 @@ export class DbInitializerConstruct extends Construct {
   constructor(scope: Construct, id: string, props: DbInitializerConstructProps) {
     super(scope, id);
 
-    const { vpc, lambdaSecurityGroup, cluster, masterSecret, config } = props;
+    const { cluster, masterSecret, config } = props;
 
-    // Lambda関数を作成
-    // NodejsFunctionはデフォルトで同じディレクトリの
-    // {construct-id}.function.ts ファイルを探す
-    this.initializerFunction = new lambdaNodejs.NodejsFunction(this, 'DbInitializer', {
-      entry: path.join(__dirname, 'db-initializer.function.ts'),
-      runtime: lambda.Runtime.NODEJS_20_X,
-      handler: 'handler',
+    // Python Lambda関数（RDS Data APIを使用、Layerなし、外部ライブラリなし）
+    this.initializerFunction = new lambda.Function(this, 'DbInitializer', {
+      runtime: lambda.Runtime.PYTHON_3_11,
+      handler: 'lambda_function.lambda_handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda/db-initializer')),
       timeout: Duration.minutes(5),
       memorySize: 256,
-      vpc: vpc,
-      vpcSubnets: {
-        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
-      },
-      securityGroups: [lambdaSecurityGroup],
-      environment: {
-        NODE_OPTIONS: '--enable-source-maps',
-      },
-      bundling: {
-        nodeModules: ['pg'],
-        minify: false,
-        sourceMap: true,
-        externalModules: [
-          '@aws-sdk/client-secrets-manager', // AWS SDKはLambda環境に含まれている
-        ],
-      },
       logRetention: logs.RetentionDays.ONE_WEEK,
     });
 
-    // Secrets Managerへのアクセス権限を付与（マスターシークレットのみ）
+    // Secrets Managerへのアクセス権限を付与
     masterSecret.grantRead(this.initializerFunction);
 
-    // VPC内でのネットワークアクセス権限
+    // RDS Data APIへのアクセス権限を付与
     this.initializerFunction.addToRolePolicy(new iam.PolicyStatement({
       actions: [
-        'ec2:CreateNetworkInterface',
-        'ec2:DescribeNetworkInterfaces',
-        'ec2:DeleteNetworkInterface',
-        'ec2:AssignPrivateIpAddresses',
-        'ec2:UnassignPrivateIpAddresses'
+        'rds-data:ExecuteStatement',
+        'rds-data:BatchExecuteStatement',
+        'rds-data:BeginTransaction',
+        'rds-data:CommitTransaction',
+        'rds-data:RollbackTransaction'
       ],
-      resources: ['*'],
+      resources: [cluster.clusterArn],
     }));
 
     // Custom Resource Provider
@@ -83,7 +64,7 @@ export class DbInitializerConstruct extends Construct {
     this.customResource = new CustomResource(this, 'DbInitializerResource', {
       serviceToken: provider.serviceToken,
       properties: {
-        ClusterEndpoint: cluster.clusterEndpoint.hostname,
+        ClusterArn: cluster.clusterArn,  // Data API用にARNを渡す
         DatabaseName: config.aurora.databaseName,
         MasterSecretArn: masterSecret.secretArn,
         // タイムスタンプを追加して、更新時に再実行されるようにする

@@ -1,5 +1,6 @@
+export type Environment = 'dev' | 'stg' | 'prod';
 export interface EnvironmentConfig {
-    environment: 'dev' | 'staging' | 'prod';
+    environment: Environment;
     network: {
         vpcCidr: string;
         enableNatGateway: boolean;
@@ -23,6 +24,7 @@ export interface EnvironmentConfig {
         backupRetentionDays: number;
         enableCloudwatchLogs: boolean;
         enablePerformanceInsights: boolean;
+        availabilityZones: string[];
         naming: {
             clusterName: string;
             subnetGroupName: string;
@@ -34,44 +36,31 @@ export interface EnvironmentConfig {
         allowedCidrBlocks: string[];
         enableGuardDuty: boolean;
     };
+    bedrock: {
+        knowledgeBaseName: string;
+        dataSourceName: string;
+        s3BucketName: string;
+        embeddingModel: string;
+        chunkingStrategy: {
+            type: 'HIERARCHICAL';
+            maxParentTokens: number;
+            maxChildTokens: number;
+            overlapTokens: number;
+        };
+    };
     tags: {
         [key: string]: string;
     };
-    cost: {
-        budgetLimitUsd: number;
-        enableBudgetAlerts: boolean;
-    };
 }
-export declare const commonDefaults: {
-    network: {
-        availabilityZones: string[];
-        createVpcEndpoints: boolean;
-        naming: {
-            vpcName: string;
-            publicSubnetName: string;
-            privateSubnetName: string;
-            auroraSecurityGroupName: string;
-            lambdaSecurityGroupName: string;
-        };
-    };
-    aurora: {
-        masterUsername: string;
-        enableDataApi: boolean;
-        enableCloudwatchLogs: boolean;
-        enablePerformanceInsights: boolean;
-        naming: {
-            clusterName: string;
-            subnetGroupName: string;
-            masterSecretName: string;
-            appUserSecretName: string;
-        };
-    };
-    security: {
-        allowedCidrBlocks: string[];
-        enableGuardDuty: boolean;
-    };
-    tags: {
-        Project: string;
-        ManagedBy: string;
-    };
-};
+/**
+ * 環境別の設定を生成する関数
+ * @param environment - 環境名 ('dev' | 'stg' | 'prod')
+ * @returns 環境別の設定オブジェクト
+ */
+export declare function createConfig(environment: Environment): EnvironmentConfig;
+/**
+ * 環境を検証して取得する関数
+ * @param value - 環境名の文字列
+ * @returns 検証済みの環境名
+ */
+export declare function getValidEnvironment(value: string | undefined): Environment;

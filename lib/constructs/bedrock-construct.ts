@@ -40,7 +40,7 @@ export class BedrockConstruct extends Construct {
 
     // 1. Bedrock Knowledge Base用 Customer Managed Policy を作成
     const bedrockKnowledgeBasePolicy = new iam.ManagedPolicy(this, 'BedrockKnowledgeBasePolicy', {
-    managedPolicyName: `BedrockKnowledgeBasePolicy-${config.environment}`,
+    // managedPolicyName: `BedrockKnowledgeBasePolicy-${config.environment}-${Date.now()}`,
     statements: [
         // S3アクセス権限
         new iam.PolicyStatement({
@@ -91,7 +91,7 @@ export class BedrockConstruct extends Construct {
 
     // 2. ロール作成時に Customer Managed Policy をアタッチ
     this.serviceRole = new iam.Role(this, 'BedrockKnowledgeBaseRole', {
-    roleName: `BedrockKnowledgeBaseRole-${config.environment}`,
+    roleName: `${config.environment}-ragchat-bedrock-role`,
     assumedBy: new iam.ServicePrincipal('bedrock.amazonaws.com', {
         conditions: {
         StringEquals: {
