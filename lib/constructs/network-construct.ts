@@ -19,9 +19,8 @@ export class NetworkConstruct extends Construct {
 
     const { config } = props;
 
-    // VPC作成
-    this.vpc = new ec2.Vpc(this, config.network.naming.vpcName, {
-      vpcName: config.network.naming.vpcName,
+    // VPC作成（物理名の指定なし）
+    this.vpc = new ec2.Vpc(this, 'Vpc', {
       ipAddresses: ec2.IpAddresses.cidr(config.network.vpcCidr),
       availabilityZones: config.network.availabilityZones,
       restrictDefaultSecurityGroup: true,
@@ -29,7 +28,7 @@ export class NetworkConstruct extends Construct {
       subnetConfiguration: [
         {
           cidrMask: 24,
-          name: config.network.naming.privateSubnetName,
+          name: 'PrivateIsolated',
           subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
         },
       ],
@@ -37,25 +36,20 @@ export class NetworkConstruct extends Construct {
       natGateways: 0,
     });
 
-    // サブネットに名前タグを追加
-    this.vpc.privateSubnets.forEach((subnet, index) => {
-      cdk.Tags.of(subnet).add('Name', `${config.network.naming.privateSubnetName}-${index + 1}`);
-    });
+    // VPCにタグを追加（識別用）
+    cdk.Tags.of(this.vpc).add('Name', `${config.environment}-vpc`);
+    cdk.Tags.of(this.vpc).add('Type', 'VPC');
 
-    // ルートテーブルに名前タグを追加
-    this.vpc.node.children.forEach(child => {
-      if (child.node.defaultChild?.constructor.name === 'CfnRouteTable') {
-        cdk.Tags.of(child).add('Name', `${config.environment}-ragchat-route-table`);
-      }
-    });
-
-    // Aurora用セキュリティグループ
-    this.auroraSecurityGroup = new ec2.SecurityGroup(this, 'AuroraSG', {
+    // Aurora用セキュリティグループ（物理名の指定なし）
+    this.auroraSecurityGroup = new ec2.SecurityGroup(this, 'AuroraSecurityGroup', {
       vpc: this.vpc,
-      securityGroupName: config.network.naming.auroraSecurityGroupName,
       description: 'Security group for Aurora Serverless v2',
       allowAllOutbound: true,
     });
+
+    // Auroraセキュリティグループにタグを追加
+    cdk.Tags.of(this.auroraSecurityGroup).add('Name', `${config.environment}-aurora-sg`);
+    cdk.Tags.of(this.auroraSecurityGroup).add('Type', 'AuroraSecurityGroup');
 
     // 自分自身からのアクセスを許可
     this.auroraSecurityGroup.addIngressRule(
@@ -64,13 +58,16 @@ export class NetworkConstruct extends Construct {
       'Allow access from same security group'
     );
 
-    // Lambda用セキュリティグループ
-    this.lambdaSecurityGroup = new ec2.SecurityGroup(this, 'LambdaSG', {
+    // Lambda用セキュリティグループ（物理名の指定なし）
+    this.lambdaSecurityGroup = new ec2.SecurityGroup(this, 'LambdaSecurityGroup', {
       vpc: this.vpc,
-      securityGroupName: config.network.naming.lambdaSecurityGroupName,
       description: 'Security group for Lambda functions',
       allowAllOutbound: true,
     });
+
+    // Lambdaセキュリティグループにタグを追加
+    cdk.Tags.of(this.lambdaSecurityGroup).add('Name', `${config.environment}-lambda-sg`);
+    cdk.Tags.of(this.lambdaSecurityGroup).add('Type', 'LambdaSecurityGroup');
 
     // Lambda → Aurora接続許可
     this.auroraSecurityGroup.addIngressRule(
@@ -80,16 +77,20 @@ export class NetworkConstruct extends Construct {
     );
 
     // S3 VPCエンドポイント
-    const s3Endpoint = this.vpc.addGatewayEndpoint('S3Endpoint', {
+    this.vpc.addGatewayEndpoint('S3GatewayEndpoint', {
       service: ec2.GatewayVpcEndpointAwsService.S3,
     });
-    cdk.Tags.of(s3Endpoint).add('Name', `${config.environment}-ragchat-s3-endpoint`);
-
+    
     // Secrets Manager VPCエンドポイント
-    const secretsEndpoint = this.vpc.addInterfaceEndpoint('SecretsManagerEndpoint', {
+    this.vpc.addInterfaceEndpoint('SecretsManagerEndpoint', {
       service: ec2.InterfaceVpcEndpointAwsService.SECRETS_MANAGER,
       privateDnsEnabled: true,
     });
-    cdk.Tags.of(secretsEndpoint).add('Name', `${config.environment}-ragchat-secrets-endpoint`);
+
+    // RDS Data API VPCエンドポイント（Auroraのデータアクセス用）
+     this.vpc.addInterfaceEndpoint('RdsDataEndpoint', {
+      service: ec2.InterfaceVpcEndpointAwsService.RDS_DATA,
+      privateDnsEnabled: true,
+    });
   }
 }

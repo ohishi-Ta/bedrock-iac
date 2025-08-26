@@ -28,13 +28,13 @@ const stackProps: cdk.StackProps = {
 };
 
 // ネットワークスタック
-const networkStack = new NetworkStack(app, `${environment}-ragchat-network-stack`, {
+const networkStack = new NetworkStack(app, `${environment}-RagchatNetwork`, {
   ...stackProps,
   config,
 });
 
 // データベーススタック
-const databaseStack = new DatabaseStack(app, `${environment}-ragchat-database-stack`, {
+const databaseStack = new DatabaseStack(app, `${environment}-RagchatDatabase`, {
   ...stackProps,
   config,
   vpc: networkStack.networkConstruct.vpc,
@@ -43,7 +43,7 @@ const databaseStack = new DatabaseStack(app, `${environment}-ragchat-database-st
 });
 
 // Bedrockスタック
-const bedrockStack = new BedrockStack(app, `${environment}-ragchat-bedrock-stack`, {
+const bedrockStack = new BedrockStack(app, `${environment}-RagchatBedrock`, {
   ...stackProps,
   config,
   cluster: databaseStack.auroraConstruct.cluster,
