@@ -8,7 +8,6 @@ export interface EnvironmentConfig {
         createVpcEndpoints: boolean;
         naming: {
             vpcName: string;
-            publicSubnetName: string;
             privateSubnetName: string;
             auroraSecurityGroupName: string;
             lambdaSecurityGroupName: string;
@@ -24,7 +23,6 @@ export interface EnvironmentConfig {
         backupRetentionDays: number;
         enableCloudwatchLogs: boolean;
         enablePerformanceInsights: boolean;
-        availabilityZones: string[];
         naming: {
             clusterName: string;
             subnetGroupName: string;

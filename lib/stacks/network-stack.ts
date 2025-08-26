@@ -1,93 +1,68 @@
 // lib/stacks/network-stack.ts
 
 import * as cdk from 'aws-cdk-lib';
-import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import { Construct } from 'constructs';
+import { NetworkConstruct } from '../constructs/network-construct';
+import { EnvironmentConfig } from '../config/environment-config';
+
+export interface NetworkStackProps extends cdk.StackProps {
+ config: EnvironmentConfig;
+}
 
 export class NetworkStack extends cdk.Stack {
-  public readonly networkConstruct: {
-    vpc: ec2.Vpc;
-    auroraSecurityGroup: ec2.SecurityGroup;
-    lambdaSecurityGroup: ec2.SecurityGroup;
-  };
+ public readonly networkConstruct: NetworkConstruct;
 
-  constructor(scope: Construct, id: string, props: cdk.StackProps & { config: any }) {
-    super(scope, id, props);
+ constructor(scope: Construct, id: string, props: NetworkStackProps) {
+   super(scope, id, props);
 
-    // VPC作成
-    const vpc = new ec2.Vpc(this, 'Vpc', {
-      maxAzs: 2,
-      natGateways: 0, // NAT Gatewayは不要
-      subnetConfiguration: [
-        {
-          cidrMask: 24,
-          name: 'Database',
-          subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
-        },
-      ],
-    });
+   const { config } = props;
 
-    // セキュリティグループ作成
-    const auroraSecurityGroup = new ec2.SecurityGroup(this, 'AuroraSecurityGroup', {
-      vpc,
-      description: 'Security group for Aurora PostgreSQL',
-      allowAllOutbound: false,
-    });
+   // NetworkConstructを使用してネットワークリソースを作成
+   this.networkConstruct = new NetworkConstruct(this, 'Network', {
+     config,
+   });
 
-    const lambdaSecurityGroup = new ec2.SecurityGroup(this, 'LambdaSecurityGroup', {
-      vpc,
-      description: 'Security group for Lambda functions',
-      allowAllOutbound: true, // AWSサービスへのアクセスを許可
-    });
+   // スタックレベルでの出力値
+   new cdk.CfnOutput(this, 'VpcId', {
+     value: this.networkConstruct.vpc.vpcId,
+     description: 'VPC ID',
+     exportName: `${config.environment}-vpc-id`,
+   });
 
-    // Aurora用のインバウンドルール
-    auroraSecurityGroup.addIngressRule(
-      lambdaSecurityGroup,
-      ec2.Port.tcp(5432),
-      'Allow Lambda to connect to Aurora PostgreSQL'
-    );
+   new cdk.CfnOutput(this, 'VpcCidr', {
+     value: this.networkConstruct.vpc.vpcCidrBlock,
+     description: 'VPC CIDR Block',
+     exportName: `${config.environment}-vpc-cidr`,
+   });
 
-    // VPCエンドポイント用のセキュリティグループ
-    const vpcEndpointSecurityGroup = new ec2.SecurityGroup(this, 'VpcEndpointSecurityGroup', {
-      vpc,
-      description: 'Security group for VPC endpoints',
-      allowAllOutbound: false,
-    });
+   new cdk.CfnOutput(this, 'AuroraSecurityGroupId', {
+     value: this.networkConstruct.auroraSecurityGroup.securityGroupId,
+     description: 'Aurora Security Group ID',
+     exportName: `${config.environment}-aurora-sg-id`,
+   });
 
-    // VPCエンドポイントへのHTTPSアクセスを許可
-    vpcEndpointSecurityGroup.addIngressRule(
-      lambdaSecurityGroup,
-      ec2.Port.tcp(443),
-      'Allow Lambda to access VPC endpoints'
-    );
+   new cdk.CfnOutput(this, 'LambdaSecurityGroupId', {
+     value: this.networkConstruct.lambdaSecurityGroup.securityGroupId,
+     description: 'Lambda Security Group ID',
+     exportName: `${config.environment}-lambda-sg-id`,
+   });
 
-    // Secrets Manager VPCエンドポイント
-    new ec2.InterfaceVpcEndpoint(this, 'SecretsManagerEndpoint', {
-      vpc,
-      service: ec2.InterfaceVpcEndpointAwsService.SECRETS_MANAGER,
-      subnets: {
-        subnets: vpc.isolatedSubnets,
-      },
-      securityGroups: [vpcEndpointSecurityGroup],
-      privateDnsEnabled: true,
-    });
+   // プライベートサブネットのIDを出力
+   this.networkConstruct.vpc.privateSubnets.forEach((subnet, index) => {
+     new cdk.CfnOutput(this, `PrivateSubnet${index}Id`, {
+       value: subnet.subnetId,
+       description: `Private Subnet ${index} ID`,
+       exportName: `${config.environment}-private-subnet-${index}-id`,
+     });
+   });
 
-    // S3 VPCエンドポイント（ゲートウェイタイプ）
-    new ec2.GatewayVpcEndpoint(this, 'S3Endpoint', {
-      vpc,
-      service: ec2.GatewayVpcEndpointAwsService.S3,
-      subnets: [
-        {
-          subnets: vpc.isolatedSubnets,
-        },
-      ],
-    });
+   // 共通タグ設定
+   this.applyCommonTags(config.tags);
+ }
 
-    // 出力
-    this.networkConstruct = {
-      vpc,
-      auroraSecurityGroup,
-      lambdaSecurityGroup,
-    };
-  }
+ private applyCommonTags(tags: { [key: string]: string }): void {
+   Object.entries(tags).forEach(([key, value]) => {
+     cdk.Tags.of(this).add(key, value);
+   });
+ }
 }

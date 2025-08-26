@@ -10,11 +10,11 @@ export interface EnvironmentConfig {
     vpcCidr: string;
     enableNatGateway: boolean;
     availabilityZones: string[];
+    createVpcEndpoints: boolean;
     
     // 名前設定
     naming: {
       vpcName: string;
-      publicSubnetName: string;
       privateSubnetName: string;
       auroraSecurityGroupName: string;
       lambdaSecurityGroupName: string;
@@ -41,6 +41,13 @@ export interface EnvironmentConfig {
     };
   };
   
+  // セキュリティ設定
+  security: {
+    enableVpcFlowLogs: boolean;
+    allowedCidrBlocks: string[];
+    enableGuardDuty: boolean;
+  };
+  
   // Bedrock設定
   bedrock: {
     knowledgeBaseName: string;
@@ -61,12 +68,13 @@ export interface EnvironmentConfig {
   };
 }
 
-// 共通のデフォルト設定（環境によらない固定値）
+// 共通のデフォルト設定
 const commonDefaults = {
   network: {
     vpcCidr: '10.0.0.0/16',
     enableNatGateway: false,
     availabilityZones: ['ap-northeast-1a', 'ap-northeast-1c'],
+    createVpcEndpoints: true,
   },
   aurora: {
     masterUsername: 'bedrockadmin',
@@ -77,6 +85,11 @@ const commonDefaults = {
     backupRetentionDays: 7,
     enableCloudwatchLogs: true,
     enablePerformanceInsights: false,
+  },
+  security: {
+    enableVpcFlowLogs: false,
+    allowedCidrBlocks: ['10.0.0.0/16'],
+    enableGuardDuty: false,
   },
   bedrock: {
     embeddingModel: 'amazon.titan-embed-text-v2:0',
@@ -108,7 +121,6 @@ export function createConfig(environment: Environment): EnvironmentConfig {
       // 命名は環境変数を直接埋め込み
       naming: {
         vpcName: `${environment}-ragchat-vpc`,
-        publicSubnetName: `${environment}-ragchat-public-subnet`,
         privateSubnetName: `${environment}-ragchat-private-subnet`,
         auroraSecurityGroupName: `${environment}-ragchat-aurora-sg`,
         lambdaSecurityGroupName: `${environment}-ragchat-lambda-sg`,
@@ -121,10 +133,14 @@ export function createConfig(environment: Environment): EnvironmentConfig {
       
       // 命名は環境変数を直接埋め込み
       naming: {
-        clusterName: `${environment}-ragchat-database`,
+        clusterName: `${environment}-ragchat-aurora-cluster`,
         subnetGroupName: `${environment}-ragchat-db-subnet-group`,
         masterSecretName: `${environment}-ragchat-aurora-secret`,
       },
+    },
+    
+    security: {
+      ...commonDefaults.security,
     },
     
     bedrock: {
