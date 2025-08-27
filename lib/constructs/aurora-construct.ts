@@ -89,7 +89,7 @@ export class AuroraConstruct extends Construct {
       },
 
       // メンテナンス設定
-      preferredMaintenanceWindow: 'sun:04:00-sun:05:00', // JST日曜13:00-14:00
+      preferredMaintenanceWindow: 'sun:04:00-sun:05:00',
 
       // CloudWatchログ
       cloudwatchLogsExports: config.aurora.enableCloudwatchLogs 

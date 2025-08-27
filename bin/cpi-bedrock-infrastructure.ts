@@ -2,9 +2,7 @@
 
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { NetworkStack } from '../lib/stacks/network-stack';
-import { DatabaseStack } from '../lib/stacks/database-stack';
-import { BedrockStack } from '../lib/stacks/bedrock-stack';
+import { RagchatCommonStack } from '../lib/stacks/ragchat-common-stack';
 import { createConfig, getValidEnvironment } from '../lib/config/environment-config';
 
 const app = new cdk.App();
@@ -27,32 +25,11 @@ const stackProps: cdk.StackProps = {
   description: `Infrastructure for ${environment} environment`,
 };
 
-// ネットワークスタック
-const networkStack = new NetworkStack(app, `${environment}-RagchatNetwork`, {
+// 統合スタック
+new RagchatCommonStack(app, `${environment}-RagchatCommon`, {
   ...stackProps,
   config,
 });
-
-// データベーススタック
-const databaseStack = new DatabaseStack(app, `${environment}-RagchatDatabase`, {
-  ...stackProps,
-  config,
-  vpc: networkStack.networkConstruct.vpc,
-  auroraSecurityGroup: networkStack.networkConstruct.auroraSecurityGroup,
-  lambdaSecurityGroup: networkStack.networkConstruct.lambdaSecurityGroup,
-});
-
-// Bedrockスタック
-const bedrockStack = new BedrockStack(app, `${environment}-RagchatBedrock`, {
-  ...stackProps,
-  config,
-  cluster: databaseStack.auroraConstruct.cluster,
-  masterSecret: databaseStack.auroraConstruct.masterSecret,
-});
-
-// 依存関係設定
-databaseStack.addDependency(networkStack);
-bedrockStack.addDependency(databaseStack);
 
 // スタックレベルのタグを追加
 cdk.Tags.of(app).add('Environment', environment);

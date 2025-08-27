@@ -68,7 +68,7 @@ export class DbInitializerConstruct extends Construct {
         DatabaseName: config.aurora.databaseName,
         MasterSecretArn: masterSecret.secretArn,
         // タイムスタンプを追加して、更新時に再実行されるようにする
-        Timestamp: new Date().toISOString(),
+        // Timestamp: new Date().toISOString(),
       },
       // 削除時の動作を設定
       removalPolicy: config.environment === 'dev' 
