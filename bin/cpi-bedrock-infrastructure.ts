@@ -3,6 +3,7 @@
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { RagchatCommonStack } from '../lib/stacks/ragchat-common-stack';
+import { RagchatServiceStack } from '../lib/stacks/ragchat-service-stack';
 import { createConfig, getValidEnvironment } from '../lib/config/environment-config';
 
 const app = new cdk.App();
@@ -25,8 +26,14 @@ const stackProps: cdk.StackProps = {
   description: `Infrastructure for ${environment} environment`,
 };
 
-// 統合スタック
+// 共通インフラスタック（既存）
 new RagchatCommonStack(app, `${environment}-RagchatCommon`, {
+  ...stackProps,
+  config,
+});
+
+// サービススタック（新規）
+new RagchatServiceStack(app, `${environment}-RagchatService`, {
   ...stackProps,
   config,
 });

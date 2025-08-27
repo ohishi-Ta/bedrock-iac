@@ -5,6 +5,12 @@ export type Environment = 'dev' | 'stg' | 'prod';
 export interface EnvironmentConfig {
   environment: Environment;
   
+  // ドメイン設定
+  domain?: {
+    domainName: string;
+    certificateArn: string;
+  };
+  
   // ネットワーク設定
   network: {
     vpcCidr: string;
@@ -12,7 +18,6 @@ export interface EnvironmentConfig {
     availabilityZones: string[];
     createVpcEndpoints: boolean;
     
-    // 名前設定
     naming: {
       vpcName: string;
       privateSubnetName: string;
@@ -33,7 +38,6 @@ export interface EnvironmentConfig {
     enableCloudwatchLogs: boolean;
     enablePerformanceInsights: boolean;
     
-    // 名前設定
     naming: {
       clusterName: string;
       subnetGroupName: string;
@@ -60,6 +64,47 @@ export interface EnvironmentConfig {
       maxChildTokens: number;
       overlapTokens: number;
     };
+  };
+  
+  // DynamoDB設定
+  dynamodb: {
+    tableName: string;
+  };
+  
+  // S3設定
+  s3: {
+    promptImagesBucketName: string;
+    frontBucketName: string;
+  };
+  
+  // Cognito設定
+  cognito: {
+    userPoolName: string;
+    userPoolClientName: string;
+  };
+  
+  // CloudFront設定
+  cloudfront: {
+    distributionName: string;
+    originAccessControlName: string;
+  };
+  
+  // API Gateway設定
+  apiGateway: {
+    httpApiName: string;
+  };
+  
+  // Lambda Functions設定
+  lambda: {
+    ragPromptImagesFunctionName: string;
+    s3ImagesFunctionName: string;
+    cognitoPostConfirmationFunctionName: string;
+    cognitoUserEnableFunctionName: string;
+    ragGenerateImageFunctionName: string;
+    ragGetChatsFunctionName: string;
+    searchChatsFunctionName: string;
+    ragSseStreamFunctionName: string;
+    ragGetChatDetailFunctionName: string;
   };
   
   // 共通タグ
@@ -106,19 +151,39 @@ const commonDefaults = {
   },
 };
 
+// 環境別のドメイン設定
+const domainConfigs: Record<Environment, { domainName: string; certificateArn: string } | undefined> = {
+  dev: {
+    domainName: 'dev.ai.cpinfo.jp',
+    certificateArn: 'arn:aws:acm:us-east-1:794038219704:certificate/7d2d02e3-c835-491a-b616-50b55f738943'
+  },
+  stg: {
+    domainName: 'stg.ai.cpinfo.jp', 
+    certificateArn: 'arn:aws:acm:us-east-1:794038219704:certificate/7d2d02e3-c835-491a-b616-50b55f738943'
+  },
+  prod: {
+    domainName: 'ai.cpinfo.jp',
+    certificateArn: 'arn:aws:acm:us-east-1:794038219704:certificate/7d2d02e3-c835-491a-b616-50b55f738943'
+  }
+};
+
 /**
  * 環境別の設定を生成する関数
  * @param environment - 環境名 ('dev' | 'stg' | 'prod')
  * @returns 環境別の設定オブジェクト
  */
 export function createConfig(environment: Environment): EnvironmentConfig {
+  const basePrefix = `${environment}-ragchat`;
+  
   return {
     environment: environment,
+    
+    // ドメイン設定
+    domain: domainConfigs[environment],
     
     network: {
       ...commonDefaults.network,
       
-      // 命名は環境変数を直接埋め込み
       naming: {
         vpcName: `${environment}-ragchat-vpc`,
         privateSubnetName: `${environment}-ragchat-private-subnet`,
@@ -131,7 +196,6 @@ export function createConfig(environment: Environment): EnvironmentConfig {
       ...commonDefaults.aurora,
       databaseName: `${environment}_ragchat_db`,
       
-      // 命名は環境変数を直接埋め込み
       naming: {
         clusterName: `${environment}-ragchat-aurora-cluster`,
         subnetGroupName: `${environment}-ragchat-db-subnet-group`,
@@ -148,6 +212,47 @@ export function createConfig(environment: Environment): EnvironmentConfig {
       knowledgeBaseName: `${environment}-ragchat-knowledge-base`,
       dataSourceName: `${environment}-ragchat-datasource`,
       s3BucketName: `${environment}-ragchat-kb-source`,
+    },
+    
+    // DynamoDB設定
+    dynamodb: {
+      tableName: `${basePrefix}-app-table`,
+    },
+    
+    // S3設定
+    s3: {
+      promptImagesBucketName: `${basePrefix}-prompt-images`,
+      frontBucketName: `${basePrefix}-front`,
+    },
+    
+    // Cognito設定
+    cognito: {
+      userPoolName: `${basePrefix}-user-pool`,
+      userPoolClientName: `${basePrefix}-user-pool-client`,
+    },
+    
+    // CloudFront設定
+    cloudfront: {
+      distributionName: `${basePrefix} distribution`,
+      originAccessControlName: `${basePrefix}-OAC`,
+    },
+    
+    // API Gateway設定
+    apiGateway: {
+      httpApiName: `${basePrefix}-http-api`,
+    },
+    
+    // Lambda Functions設定
+    lambda: {
+      ragPromptImagesFunctionName: `${basePrefix}-prompt-images-function`,
+      s3ImagesFunctionName: `${basePrefix}-s3-images-function`,
+      cognitoPostConfirmationFunctionName: `${basePrefix}-cognito-post-confirmation-function`,
+      cognitoUserEnableFunctionName: `${basePrefix}-cognito-user-enable-function`,
+      ragGenerateImageFunctionName: `${basePrefix}-generate-image-function`,
+      ragGetChatsFunctionName: `${basePrefix}-get-chats-function`,
+      searchChatsFunctionName: `${basePrefix}-search-chats-function`,
+      ragSseStreamFunctionName: `${basePrefix}-sse-stream-function`,
+      ragGetChatDetailFunctionName: `${basePrefix}-get-chat-detail-function`,
     },
     
     tags: {

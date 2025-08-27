@@ -1,6 +1,10 @@
 export type Environment = 'dev' | 'stg' | 'prod';
 export interface EnvironmentConfig {
     environment: Environment;
+    domain?: {
+        domainName: string;
+        certificateArn: string;
+    };
     network: {
         vpcCidr: string;
         enableNatGateway: boolean;
@@ -45,6 +49,35 @@ export interface EnvironmentConfig {
             maxChildTokens: number;
             overlapTokens: number;
         };
+    };
+    dynamodb: {
+        tableName: string;
+    };
+    s3: {
+        promptImagesBucketName: string;
+        frontBucketName: string;
+    };
+    cognito: {
+        userPoolName: string;
+        userPoolClientName: string;
+    };
+    cloudfront: {
+        distributionName: string;
+        originAccessControlName: string;
+    };
+    apiGateway: {
+        httpApiName: string;
+    };
+    lambda: {
+        ragPromptImagesFunctionName: string;
+        s3ImagesFunctionName: string;
+        cognitoPostConfirmationFunctionName: string;
+        cognitoUserEnableFunctionName: string;
+        ragGenerateImageFunctionName: string;
+        ragGetChatsFunctionName: string;
+        searchChatsFunctionName: string;
+        ragSseStreamFunctionName: string;
+        ragGetChatDetailFunctionName: string;
     };
     tags: {
         [key: string]: string;

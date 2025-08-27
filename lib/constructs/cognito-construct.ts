@@ -1,0 +1,50 @@
+// lib/constructs/cognito-construct.ts
+
+import * as cognito from 'aws-cdk-lib/aws-cognito';
+import * as cdk from 'aws-cdk-lib';
+import { Construct } from 'constructs';
+import { Duration } from 'aws-cdk-lib';
+import { EnvironmentConfig } from '../config/environment-config';
+
+export interface CognitoConstructProps {
+  config: EnvironmentConfig;
+}
+
+export class CognitoConstruct extends Construct {
+  public readonly userPool: cognito.UserPool;
+  public readonly userPoolClient: cognito.UserPoolClient;
+
+  constructor(scope: Construct, id: string, props: CognitoConstructProps) {
+    super(scope, id);
+
+    const { config } = props;
+
+    // Cognito User Pool - 設定から命名取得
+    this.userPool = new cognito.UserPool(this, 'RagAppUserPool', {
+      userPoolName: config.cognito.userPoolName,
+      autoVerify: { email: true },
+      standardAttributes: {
+        email: { required: true, mutable: true },
+      },
+    });
+
+    // Cognito User Pool Client - 設定から命名取得
+    this.userPoolClient = new cognito.UserPoolClient(this, 'RagAppUserPoolClient', {
+      userPoolClientName: config.cognito.userPoolClientName,
+      userPool: this.userPool,
+      accessTokenValidity: Duration.days(1),
+      idTokenValidity: Duration.days(1),
+      refreshTokenValidity: Duration.days(14),
+      preventUserExistenceErrors: true,
+    });
+
+    // タグ設定
+    this.applyTags(config.tags);
+  }
+
+  private applyTags(tags: { [key: string]: string }): void {
+    Object.entries(tags).forEach(([key, value]) => {
+      cdk.Tags.of(this).add(key, value);
+    });
+  }
+}
