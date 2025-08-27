@@ -27,15 +27,17 @@ const stackProps: cdk.StackProps = {
 };
 
 // 共通インフラスタック（既存）
-new RagchatCommonStack(app, `${environment}-RagchatCommon`, {
+const commonStack = new RagchatCommonStack(app, `${environment}-RagchatCommon`, {
   ...stackProps,
   config,
 });
 
 // サービススタック（新規）
-new RagchatServiceStack(app, `${environment}-RagchatService`, {
+const serviceStack = new RagchatServiceStack(app, `${environment}-RagchatService`, {
   ...stackProps,
   config,
+  knowledgeBaseId: commonStack.knowledgeBase.attrKnowledgeBaseId,
+  knowledgeBaseRegion: stackProps.env?.region,
 });
 
 // スタックレベルのタグを追加

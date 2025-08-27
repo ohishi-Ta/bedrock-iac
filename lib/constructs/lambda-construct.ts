@@ -14,6 +14,8 @@ import * as path from 'path';
 export interface LambdaConstructProps {
   config: EnvironmentConfig;
   dynamoTable: dynamodb.Table;
+  knowledgeBaseId?: string;
+  knowledgeBaseRegion?: string;
   promptImagesBucket: s3.Bucket;
   roles: {
     lambdaGenerateRole: iam.Role;
@@ -38,7 +40,7 @@ export class LambdaConstruct extends Construct {
   constructor(scope: Construct, id: string, props: LambdaConstructProps) {
     super(scope, id);
 
-    const { config, dynamoTable, promptImagesBucket, roles } = props;
+    const { config, knowledgeBaseId, knowledgeBaseRegion, dynamoTable, promptImagesBucket, roles } = props;
 
     // 1. Rag Prompt Images Function
     this.ragPromptImagesFunction = new lambda.Function(this, 'RagPromptImagesFunction', {
@@ -151,10 +153,10 @@ export class LambdaConstruct extends Construct {
       memorySize: 128,
       logRetention: logs.RetentionDays.ONE_WEEK,
       environment: {
-        BEDROCK_AWS_REGION: 'us-west-2',
+        BEDROCK_AWS_REGION: config.bedrock.modelRegion,
         DYNAMODB_TABLE_NAME: dynamoTable.tableName,
-        KNOWLEDGE_BASE_ID: 'MYT87G8AIP',
-        KB_AWS_REGION: 'ap-northeast-1',
+        KNOWLEDGE_BASE_ID: knowledgeBaseId || config.bedrock.knowledgeBaseId,
+        KB_AWS_REGION: knowledgeBaseRegion || config.bedrock.knowledgeBaseRegion,
         S3_BUCKET_NAME: promptImagesBucket.bucketName,
       },
     });

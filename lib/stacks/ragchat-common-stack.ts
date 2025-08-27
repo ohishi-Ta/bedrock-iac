@@ -1,6 +1,7 @@
 // lib/stacks/ragchat-common-stack.ts
 
 import * as cdk from 'aws-cdk-lib';
+import * as bedrock from 'aws-cdk-lib/aws-bedrock';
 import { Construct } from 'constructs';
 import { NetworkConstruct } from '../constructs/network-construct';
 import { AuroraConstruct } from '../constructs/aurora-construct';
@@ -13,6 +14,7 @@ export interface RagchatCommonStackProps extends cdk.StackProps {
 }
 
 export class RagchatCommonStack extends cdk.Stack {
+  public readonly knowledgeBase: bedrock.CfnKnowledgeBase;
   constructor(scope: Construct, id: string, props: RagchatCommonStackProps) {
     super(scope, id, props);
 
@@ -45,6 +47,9 @@ export class RagchatCommonStack extends cdk.Stack {
       masterSecret: auroraConstruct.masterSecret,
       config,
     });
+
+    // Knowledge Baseを公開
+    this.knowledgeBase = bedrockConstruct.knowledgeBase;
 
     // 依存関係を明示的に設定
     bedrockConstruct.node.addDependency(auroraConstruct.cluster);

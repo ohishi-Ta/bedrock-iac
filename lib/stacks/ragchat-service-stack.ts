@@ -12,13 +12,15 @@ import { ApiGatewayConstruct } from '../constructs/api-gateway-construct';
 
 export interface RagchatServiceStackProps extends cdk.StackProps {
   config: EnvironmentConfig;
+  knowledgeBaseId?: string;
+  knowledgeBaseRegion?: string;
 }
 
 export class RagchatServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: RagchatServiceStackProps) {
     super(scope, id, props);
 
-    const { config } = props;
+    const { config, knowledgeBaseId, knowledgeBaseRegion } = props;
 
     // Cognito
     const cognitoConstruct = new CognitoConstruct(this, 'Cognito', { config });
@@ -44,6 +46,8 @@ export class RagchatServiceStack extends cdk.Stack {
     // Lambda Functions
     const lambdaConstruct = new LambdaConstruct(this, 'Lambda', {
       config,
+      knowledgeBaseId: knowledgeBaseId || config.bedrock.knowledgeBaseId,
+      knowledgeBaseRegion: knowledgeBaseRegion || config.bedrock.knowledgeBaseRegion,
       dynamoTable: storageConstruct.dynamoTable,
       promptImagesBucket: storageConstruct.promptImagesBucket,
       roles: {
