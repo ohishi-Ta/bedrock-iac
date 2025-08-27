@@ -58,6 +58,8 @@ export interface EnvironmentConfig {
     dataSourceName: string;
     s3BucketName: string;
     embeddingModel: string;
+    modelRegion: string;
+    imageGenerationRegion: string;
     chunkingStrategy: {
       type: 'HIERARCHICAL';
       maxParentTokens: number;
@@ -138,6 +140,8 @@ const commonDefaults = {
   },
   bedrock: {
     embeddingModel: 'amazon.titan-embed-text-v2:0',
+    modelRegion: 'us-west-2',
+    imageGenerationRegion: 'us-east-1',
     chunkingStrategy: {
       type: 'HIERARCHICAL' as const,
       maxParentTokens: 3000,

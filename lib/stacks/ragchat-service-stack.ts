@@ -46,8 +46,8 @@ export class RagchatServiceStack extends cdk.Stack {
     // Lambda Functions
     const lambdaConstruct = new LambdaConstruct(this, 'Lambda', {
       config,
-      knowledgeBaseId: knowledgeBaseId || config.bedrock.knowledgeBaseId,
-      knowledgeBaseRegion: knowledgeBaseRegion || config.bedrock.knowledgeBaseRegion,
+      knowledgeBaseId: knowledgeBaseId,
+      knowledgeBaseRegion: knowledgeBaseRegion,
       dynamoTable: storageConstruct.dynamoTable,
       promptImagesBucket: storageConstruct.promptImagesBucket,
       roles: {

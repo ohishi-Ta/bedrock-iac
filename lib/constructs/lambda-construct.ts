@@ -107,7 +107,7 @@ export class LambdaConstruct extends Construct {
       memorySize: 256,
       logRetention: logs.RetentionDays.ONE_WEEK,
       environment: {
-        BEDROCK_AWS_REGION: 'us-west-2',
+        BEDROCK_AWS_REGION: config.bedrock.imageGenerationRegion,
         S3_BUCKET_NAME: promptImagesBucket.bucketName,
       },
     });
@@ -155,8 +155,8 @@ export class LambdaConstruct extends Construct {
       environment: {
         BEDROCK_AWS_REGION: config.bedrock.modelRegion,
         DYNAMODB_TABLE_NAME: dynamoTable.tableName,
-        KNOWLEDGE_BASE_ID: knowledgeBaseId || config.bedrock.knowledgeBaseId,
-        KB_AWS_REGION: knowledgeBaseRegion || config.bedrock.knowledgeBaseRegion,
+        KNOWLEDGE_BASE_ID: knowledgeBaseId || '',
+        KB_AWS_REGION: knowledgeBaseRegion || '',
         S3_BUCKET_NAME: promptImagesBucket.bucketName,
       },
     });

@@ -43,6 +43,8 @@ export interface EnvironmentConfig {
         dataSourceName: string;
         s3BucketName: string;
         embeddingModel: string;
+        modelRegion: string;
+        imageGenerationRegion: string;
         chunkingStrategy: {
             type: 'HIERARCHICAL';
             maxParentTokens: number;

@@ -26,6 +26,14 @@ export class CognitoConstruct extends Construct {
       standardAttributes: {
         email: { required: true, mutable: true },
       },
+      // パスワードポリシー設定
+      passwordPolicy: {
+        minLength: 8,
+        requireLowercase: true,
+        requireUppercase: true,
+        requireDigits: true,
+        requireSymbols: false,
+      },
     });
 
     // Cognito User Pool Client - 設定から命名取得
