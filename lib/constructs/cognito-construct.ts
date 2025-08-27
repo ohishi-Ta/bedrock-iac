@@ -3,7 +3,7 @@
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { Duration } from 'aws-cdk-lib';
+import { Duration, RemovalPolicy } from 'aws-cdk-lib';
 import { EnvironmentConfig } from '../config/environment-config';
 
 export interface CognitoConstructProps {
@@ -34,6 +34,10 @@ export class CognitoConstruct extends Construct {
         requireDigits: true,
         requireSymbols: false,
       },
+      // 削除ポリシー設定
+      removalPolicy: config.environment === 'dev' 
+        ? RemovalPolicy.DESTROY 
+        : RemovalPolicy.RETAIN,
     });
 
     // Cognito User Pool Client - 設定から命名取得

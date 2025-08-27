@@ -177,7 +177,6 @@ const domainConfigs: Record<Environment, { domainName: string; certificateArn: s
  * @returns 環境別の設定オブジェクト
  */
 export function createConfig(environment: Environment): EnvironmentConfig {
-  const basePrefix = `${environment}-ragchat`;
   
   return {
     environment: environment,
@@ -220,43 +219,43 @@ export function createConfig(environment: Environment): EnvironmentConfig {
     
     // DynamoDB設定
     dynamodb: {
-      tableName: `${basePrefix}-app-table`,
+      tableName: `${environment}-ragchat-app-table`,
     },
     
     // S3設定
     s3: {
-      promptImagesBucketName: `${basePrefix}-prompt-images`,
-      frontBucketName: `${basePrefix}-front`,
+      promptImagesBucketName: `${environment}-ragchat-prompt-images`,
+      frontBucketName: `${environment}-ragchat-front`,
     },
     
     // Cognito設定
     cognito: {
-      userPoolName: `${basePrefix}-user-pool`,
-      userPoolClientName: `${basePrefix}-user-pool-client`,
+      userPoolName: `${environment}-ragchat-user-pool`,
+      userPoolClientName: `${environment}-ragchat-user-pool-client`,
     },
     
     // CloudFront設定
     cloudfront: {
-      distributionName: `${basePrefix} distribution`,
-      originAccessControlName: `${basePrefix}-OAC`,
+      distributionName: `${environment}-ragchat distribution`,
+      originAccessControlName: `${environment}-ragchat-OAC`,
     },
     
     // API Gateway設定
     apiGateway: {
-      httpApiName: `${basePrefix}-http-api`,
+      httpApiName: `${environment}-ragchat-http-api`,
     },
     
     // Lambda Functions設定
     lambda: {
-      ragPromptImagesFunctionName: `${basePrefix}-prompt-images-function`,
-      s3ImagesFunctionName: `${basePrefix}-s3-images-function`,
-      cognitoPostConfirmationFunctionName: `${basePrefix}-cognito-post-confirmation-function`,
-      cognitoUserEnableFunctionName: `${basePrefix}-cognito-user-enable-function`,
-      ragGenerateImageFunctionName: `${basePrefix}-generate-image-function`,
-      ragGetChatsFunctionName: `${basePrefix}-get-chats-function`,
-      searchChatsFunctionName: `${basePrefix}-search-chats-function`,
-      ragSseStreamFunctionName: `${basePrefix}-sse-stream-function`,
-      ragGetChatDetailFunctionName: `${basePrefix}-get-chat-detail-function`,
+      ragPromptImagesFunctionName: `${environment}-ragchat-prompt-images-function`,
+      s3ImagesFunctionName: `${environment}-ragchat-s3-images-function`,
+      cognitoPostConfirmationFunctionName: `${environment}-ragchat-cognito-post-confirmation-function`,
+      cognitoUserEnableFunctionName: `${environment}-ragchat-cognito-user-enable-function`,
+      ragGenerateImageFunctionName: `${environment}-ragchat-generate-image-function`,
+      ragGetChatsFunctionName: `${environment}-ragchat-get-chats-function`,
+      searchChatsFunctionName: `${environment}-ragchat-search-chats-function`,
+      ragSseStreamFunctionName: `${environment}-ragchat-sse-stream-function`,
+      ragGetChatDetailFunctionName: `${environment}-ragchat-get-chat-detail-function`,
     },
     
     tags: {
