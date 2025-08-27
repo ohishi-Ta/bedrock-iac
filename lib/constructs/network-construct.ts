@@ -38,7 +38,6 @@ export class NetworkConstruct extends Construct {
 
     // VPCにタグを追加（識別用）
     cdk.Tags.of(this.vpc).add('Name', `${config.environment}-vpc`);
-    cdk.Tags.of(this.vpc).add('Type', 'VPC');
 
     // Aurora用セキュリティグループ（物理名の指定なし）
     this.auroraSecurityGroup = new ec2.SecurityGroup(this, 'AuroraSecurityGroup', {
@@ -49,7 +48,6 @@ export class NetworkConstruct extends Construct {
 
     // Auroraセキュリティグループにタグを追加
     cdk.Tags.of(this.auroraSecurityGroup).add('Name', `${config.environment}-aurora-sg`);
-    cdk.Tags.of(this.auroraSecurityGroup).add('Type', 'AuroraSecurityGroup');
 
     // 自分自身からのアクセスを許可
     this.auroraSecurityGroup.addIngressRule(
@@ -67,7 +65,6 @@ export class NetworkConstruct extends Construct {
 
     // Lambdaセキュリティグループにタグを追加
     cdk.Tags.of(this.lambdaSecurityGroup).add('Name', `${config.environment}-lambda-sg`);
-    cdk.Tags.of(this.lambdaSecurityGroup).add('Type', 'LambdaSecurityGroup');
 
     // Lambda → Aurora接続許可
     this.auroraSecurityGroup.addIngressRule(
@@ -81,16 +78,22 @@ export class NetworkConstruct extends Construct {
       service: ec2.GatewayVpcEndpointAwsService.S3,
     });
     
-    // Secrets Manager VPCエンドポイント
-    this.vpc.addInterfaceEndpoint('SecretsManagerEndpoint', {
+    // // Secrets Manager VPCエンドポイント
+    const secretsManagerEndpoint = this.vpc.addInterfaceEndpoint('SecretsManagerEndpoint', {
       service: ec2.InterfaceVpcEndpointAwsService.SECRETS_MANAGER,
       privateDnsEnabled: true,
     });
 
-    // RDS Data API VPCエンドポイント（Auroraのデータアクセス用）
-     this.vpc.addInterfaceEndpoint('RdsDataEndpoint', {
+    // Secrets Manager VPCエンドポイントにタグを追加
+    cdk.Tags.of(secretsManagerEndpoint).add('Name', `${config.environment}-SecretsManagerEndpoint`);
+
+    // RdsDataEndpoint VPCエンドポイント
+    const rdsDataEndpoint = this.vpc.addInterfaceEndpoint('RdsDataEndpoint', {
       service: ec2.InterfaceVpcEndpointAwsService.RDS_DATA,
       privateDnsEnabled: true,
     });
+
+    // RdsDataEndpoint VPCエンドポイントにタグを追加
+    cdk.Tags.of(rdsDataEndpoint).add('Name', `${config.environment}-RdsDataEndpoint`);
   }
 }
