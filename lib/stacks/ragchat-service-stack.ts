@@ -9,6 +9,7 @@ import { CloudFrontConstruct } from '../constructs/cloudfront-construct';
 import { IamRolesConstruct } from '../constructs/iam-roles-construct';
 import { LambdaConstruct } from '../constructs/lambda-construct';
 import { ApiGatewayConstruct } from '../constructs/api-gateway-construct';
+import { TriggerConstruct } from '../constructs/trigger-construct';
 
 export interface RagchatServiceStackProps extends cdk.StackProps {
   config: EnvironmentConfig;
@@ -72,6 +73,20 @@ export class RagchatServiceStack extends cdk.Stack {
         ragGetChatDetailFunction: lambdaConstruct.ragGetChatDetailFunction,
       },
     });
+
+
+    // Cognito Lambdaトリガー設定
+    const triggerConstruct = new TriggerConstruct(this, 'Triggers', {	
+    config,	
+    userPool: cognitoConstruct.userPool,	
+    cognitoPostConfirmationFunction: lambdaConstruct.cognitoPostConfirmationFunction,	
+    cognitoUserEnableFunction: lambdaConstruct.cognitoUserEnableFunction,	
+    });	
+
+    // 依存関係を明示的に設定（基盤リソースが作成された後に実行）	
+    triggerConstruct.node.addDependency(cognitoConstruct);	
+    triggerConstruct.node.addDependency(lambdaConstruct);	
+    triggerConstruct.node.addDependency(iamRolesConstruct);
 
     // Stack Outputs
     new cdk.CfnOutput(this, 'CognitoUserPoolId', {
