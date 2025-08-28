@@ -289,7 +289,7 @@ export function createConfig(environment: Environment): EnvironmentConfig {
         //承認メール管理者アドレス
         ADMIN_EMAILS: 'oishi.t@cpinfo.jp',
         //システムメール送信アドレス
-        SYSTEM_EMAIL: 'system.ai.cpinfo.jp',
+        SYSTEM_EMAIL: 'system@ai.cpinfo.jp',
         SERVICE_URL: `${domainConfigs[environment]?.domainName}`
       },
     },

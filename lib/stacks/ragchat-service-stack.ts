@@ -109,11 +109,10 @@ export class RagchatServiceStack extends cdk.Stack {
       exportName: `${this.stackName}-CognitoUserPoolId`,
     });
 
-    // API Gateway HTTP API URL with dynamic stage
-    new cdk.CfnOutput(this, 'HttpApiEndpoint', {
-      description: `Invoke URL for the HttpApi (${config.environment} stage)`,
-      value: `${apiGatewayConstruct.httpApi.apiEndpoint}/${config.environment}`,
-      exportName: `${this.stackName}-HttpApiEndpoint`,
+    new cdk.CfnOutput(this, 'CognitoUserPoolClientId', {
+    description: 'Cognito User Pool Client ID',
+    value: cognitoConstruct.userPoolClient.userPoolClientId,
+    exportName: `${this.stackName}-CognitoUserPoolClientId`,
     });
 
     new cdk.CfnOutput(this, 'ApiGatewayHttpApiUrl', {
