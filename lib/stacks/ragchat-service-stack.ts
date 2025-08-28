@@ -11,7 +11,7 @@ import { LambdaConstruct } from '../constructs/lambda-construct';
 import { ApiGatewayConstruct } from '../constructs/api-gateway-construct';
 import { EventBridgeConstruct } from '../constructs/eventbridge-construct';
 import { CloudTrailConstruct } from '../constructs/cloudtrail-construct';
-
+import { CognitoPolicyConstruct } from '../constructs/cognito-policy-construct'; // 🆕
 
 export interface RagchatServiceStackProps extends cdk.StackProps {
   config: EnvironmentConfig;
@@ -25,15 +25,17 @@ export class RagchatServiceStack extends cdk.Stack {
 
     const { config, knowledgeBaseId, knowledgeBaseRegion } = props;
 
-    // Cognito (依存回避のためLambda トリガーなしで作成）
-    const cognitoConstructTemp = new CognitoConstruct(this, 'CognitoTemp', {
-        config,
-    });
-
-    // Storage
+    // 1. Storage
     const storageConstruct = new StorageConstruct(this, 'Storage', { config });
 
-    // CloudFront
+    // 2. IAM Roles（ベース版、Cognito権限なし）
+    const iamRolesConstruct = new IamRolesConstruct(this, 'IamRoles', {
+      config,
+      dynamoTable: storageConstruct.dynamoTable,
+      // 注意: userPool パラメータを削除
+    });
+
+    // 3. CloudFront
     const cloudFrontConstruct = new CloudFrontConstruct(this, 'CloudFront', {
       config,
       frontBucket: storageConstruct.frontBucket,
@@ -41,14 +43,7 @@ export class RagchatServiceStack extends cdk.Stack {
       certificateArn: config.domain?.certificateArn,
     });
 
-    // IAM Roles
-    const iamRolesConstruct = new IamRolesConstruct(this, 'IamRoles', {
-      config,
-      dynamoTable: storageConstruct.dynamoTable,
-      userPool: cognitoConstructTemp.userPool,
-    });
-
-    // Lambda Functions
+    // 4. Lambda Functions
     const lambdaConstruct = new LambdaConstruct(this, 'Lambda', {
       config,
       knowledgeBaseId: knowledgeBaseId,
@@ -64,16 +59,24 @@ export class RagchatServiceStack extends cdk.Stack {
       },
     });
 
+    // 5. Cognito（Lambdaトリガー付き）
     const cognitoConstruct = new CognitoConstruct(this, 'Cognito', {
-        config,
-        lambdaPostConfirmation: lambdaConstruct.cognitoPostConfirmationFunction,
-        lambdaUserEnable: lambdaConstruct.cognitoUserEnableFunction,
+      config,
+      lambdaPostConfirmation: lambdaConstruct.cognitoPostConfirmationFunction,
+      lambdaUserEnable: lambdaConstruct.cognitoUserEnableFunction,
     });
 
-    // 明示的依存関係を設定
-    cognitoConstruct.node.addDependency(lambdaConstruct);
+    // 6. 🆕 Cognito Policy（具体的ARN使用してベースロールに権限追加）
+    const cognitoPolicyConstruct = new CognitoPolicyConstruct(this, 'CognitoPolicy', {
+      config,
+      userPool: cognitoConstruct.userPool,
+      lambdaCognitoSESRole: iamRolesConstruct.lambdaCognitoSESRole,
+    });
 
-    // API Gateway
+    // 依存関係を明示的に設定
+    cognitoPolicyConstruct.node.addDependency(cognitoConstruct);
+
+    // 7. API Gateway
     const apiGatewayConstruct = new ApiGatewayConstruct(this, 'ApiGateway', {
       config,
       userPool: cognitoConstruct.userPool,
@@ -87,12 +90,12 @@ export class RagchatServiceStack extends cdk.Stack {
       },
     });
 
-    // CloudTrail（EventBridgeのイベント監視に必要）
+    // 8. CloudTrail（EventBridgeのイベント監視に必要）
     const cloudTrailConstruct = new CloudTrailConstruct(this, 'CloudTrail', {
       config,
     });
 
-    // EventBridge - Cognito AdminEnableUser イベントを監視
+    // 9. EventBridge - Cognito AdminEnableUser イベントを監視
     const eventBridgeConstruct = new EventBridgeConstruct(this, 'EventBridge', {
       config,
       userPool: cognitoConstruct.userPool,

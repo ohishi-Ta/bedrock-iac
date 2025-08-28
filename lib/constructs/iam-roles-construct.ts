@@ -2,7 +2,6 @@
 
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
-import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { EnvironmentConfig } from '../config/environment-config';
@@ -10,7 +9,6 @@ import { EnvironmentConfig } from '../config/environment-config';
 export interface IamRolesConstructProps {
   config: EnvironmentConfig;
   dynamoTable: dynamodb.Table;
-  userPool: cognito.UserPool;
 }
 
 export class IamRolesConstruct extends Construct {
@@ -23,13 +21,13 @@ export class IamRolesConstruct extends Construct {
   constructor(scope: Construct, id: string, props: IamRolesConstructProps) {
     super(scope, id);
 
-    const { config, dynamoTable, userPool } = props;
+    const { config, dynamoTable } = props;
 
     this.lambdaGenerateRole = this.createLambdaGenerateRole(dynamoTable);
     this.lambdaGetChatRole = this.createLambdaGetChatRole(dynamoTable);
     this.lambdaPromptImagesRole = this.createLambdaPromptImagesRole();
     this.lambdaS3ImagesRole = this.createLambdaS3ImagesRole(dynamoTable);
-    this.lambdaCognitoSESRole = this.createLambdaCognitoSESRole(userPool);
+    this.lambdaCognitoSESRole = this.createLambdaCognitoSESRoleBase();
 
     // タグ設定
     this.applyTags(config.tags);
@@ -131,17 +129,15 @@ export class IamRolesConstruct extends Construct {
     });
   }
 
-  private createLambdaCognitoSESRole(userPool: cognito.UserPool): iam.Role {
+  // Cognito権限を除外したベースロール
+  private createLambdaCognitoSESRoleBase(): iam.Role {
     const lambdaCognitoSESPolicy = new iam.ManagedPolicy(this, 'LambdaCognitoSESPolicy', {
       statements: [
         new iam.PolicyStatement({
           actions: ['ses:SendEmail', 'ses:SendRawEmail'],
           resources: [`arn:aws:ses:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:identity/*`],
         }),
-        new iam.PolicyStatement({
-          actions: ['cognito-idp:AdminDisableUser', 'cognito-idp:AdminGetUser', 'cognito-idp:ListUsers'],
-          resources: [userPool.userPoolArn],
-        }),
+        // Cognito権限は削除（後でCognitoPolicyConstructで追加）
       ],
     });
 
