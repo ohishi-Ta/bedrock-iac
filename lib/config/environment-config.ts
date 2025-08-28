@@ -107,6 +107,12 @@ export interface EnvironmentConfig {
     searchChatsFunctionName: string;
     ragSseStreamFunctionName: string;
     ragGetChatDetailFunctionName: string;
+    // 追加: Cognito Lambda 用の環境変数
+    cognitoSendmailFunctionEnv: {
+      ADMIN_EMAILS: string;
+      SERVICE_URL: string;
+      SYSTEM_EMAIL: string;
+    };
   };
   
   // 共通タグ
@@ -256,8 +262,14 @@ export function createConfig(environment: Environment): EnvironmentConfig {
       searchChatsFunctionName: `${environment}-ragchat-search-chats-function`,
       ragSseStreamFunctionName: `${environment}-ragchat-sse-stream-function`,
       ragGetChatDetailFunctionName: `${environment}-ragchat-get-chat-detail-function`,
+      cognitoSendmailFunctionEnv: {
+        //承認メール管理者アドレス
+        ADMIN_EMAILS: 'admin@example.com',
+        //システムメール送信アドレス
+        SYSTEM_EMAIL: 'system@example.com',
+        SERVICE_URL: `${domainConfigs[environment]?.domainName}`
+      },
     },
-    
     tags: {
       ...commonDefaults.tags,
       Environment: environment,

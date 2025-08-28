@@ -22,8 +22,10 @@ export class RagchatServiceStack extends cdk.Stack {
 
     const { config, knowledgeBaseId, knowledgeBaseRegion } = props;
 
-    // Cognito
-    const cognitoConstruct = new CognitoConstruct(this, 'Cognito', { config });
+    // Cognito (依存回避のためLambda トリガーなしで作成）
+    const cognitoConstructTemp = new CognitoConstruct(this, 'CognitoTemp', {
+        config,
+    });
 
     // Storage
     const storageConstruct = new StorageConstruct(this, 'Storage', { config });
@@ -40,7 +42,7 @@ export class RagchatServiceStack extends cdk.Stack {
     const iamRolesConstruct = new IamRolesConstruct(this, 'IamRoles', {
       config,
       dynamoTable: storageConstruct.dynamoTable,
-      userPool: cognitoConstruct.userPool,
+      userPool: cognitoConstructTemp.userPool,
     });
 
     // Lambda Functions
@@ -58,6 +60,15 @@ export class RagchatServiceStack extends cdk.Stack {
         lambdaCognitoSESRole: iamRolesConstruct.lambdaCognitoSESRole,
       },
     });
+
+    const cognitoConstruct = new CognitoConstruct(this, 'Cognito', {
+        config,
+        lambdaPostConfirmation: lambdaConstruct.cognitoPostConfirmationFunction,
+        lambdaUserEnable: lambdaConstruct.cognitoUserEnableFunction,
+    });
+
+    // 明示的依存関係を設定
+    cognitoConstruct.node.addDependency(lambdaConstruct);
 
     // API Gateway
     const apiGatewayConstruct = new ApiGatewayConstruct(this, 'ApiGateway', {

@@ -80,6 +80,11 @@ export interface EnvironmentConfig {
         searchChatsFunctionName: string;
         ragSseStreamFunctionName: string;
         ragGetChatDetailFunctionName: string;
+        cognitoSendmailFunctionEnv: {
+            ADMIN_EMAILS: string;
+            SERVICE_URL: string;
+            SYSTEM_EMAIL: string;
+        };
     };
     tags: {
         [key: string]: string;

@@ -1,6 +1,7 @@
 // lib/constructs/cognito-construct.ts
 
 import * as cognito from 'aws-cdk-lib/aws-cognito';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { Duration, RemovalPolicy } from 'aws-cdk-lib';
@@ -8,6 +9,8 @@ import { EnvironmentConfig } from '../config/environment-config';
 
 export interface CognitoConstructProps {
   config: EnvironmentConfig;
+  lambdaPostConfirmation?: lambda.IFunction;
+  lambdaUserEnable?: lambda.IFunction;
 }
 
 export class CognitoConstruct extends Construct {
@@ -17,7 +20,7 @@ export class CognitoConstruct extends Construct {
   constructor(scope: Construct, id: string, props: CognitoConstructProps) {
     super(scope, id);
 
-    const { config } = props;
+     const { config, lambdaPostConfirmation, lambdaUserEnable } = props;
 
     // Cognito User Pool - 設定から命名取得
     this.userPool = new cognito.UserPool(this, 'RagAppUserPool', {
@@ -44,6 +47,9 @@ export class CognitoConstruct extends Construct {
       removalPolicy: config.environment === 'dev' 
         ? RemovalPolicy.DESTROY 
         : RemovalPolicy.RETAIN,
+      lambdaTriggers: {
+      postConfirmation: lambdaPostConfirmation,
+    },
     });
 
     // Cognito User Pool Client - 設定から命名取得

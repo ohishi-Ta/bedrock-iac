@@ -86,6 +86,10 @@ export class LambdaConstruct extends Construct {
       timeout: Duration.seconds(60),
       memorySize: 128,
       logRetention: logs.RetentionDays.ONE_WEEK,
+      environment: {
+        ADMIN_EMAILS: config.lambda.cognitoSendmailFunctionEnv.ADMIN_EMAILS,
+        SYSTEM_EMAIL: config.lambda.cognitoSendmailFunctionEnv.SYSTEM_EMAIL,
+      },
     });
 
     // 4. Cognito User Enable Function
@@ -98,6 +102,10 @@ export class LambdaConstruct extends Construct {
       timeout: Duration.seconds(60),
       memorySize: 128,
       logRetention: logs.RetentionDays.ONE_WEEK,
+      environment: {
+        SERVICE_URL: `https://${config.domain?.domainName}`,
+        SYSTEM_EMAIL: config.lambda.cognitoSendmailFunctionEnv.SYSTEM_EMAIL,
+      },
     });
 
     // 5. Rag Generate Image Function
