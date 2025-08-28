@@ -70,6 +70,13 @@ export interface EnvironmentConfig {
     apiGateway: {
         httpApiName: string;
     };
+    eventbridge: {
+        eventRuleName: string;
+    };
+    cloudtrail: {
+        trailName: string;
+        trailBucketName: string;
+    };
     lambda: {
         ragPromptImagesFunctionName: string;
         s3ImagesFunctionName: string;

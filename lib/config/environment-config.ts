@@ -95,6 +95,18 @@ export interface EnvironmentConfig {
   apiGateway: {
     httpApiName: string;
   };
+
+  // EventBridge設定
+  eventbridge: {
+    eventRuleName: string;
+  };
+
+  // CloudTrail証跡設定
+  cloudtrail: {
+    trailName: string,
+    trailBucketName: string,
+  },
+  
   
   // Lambda Functions設定
   lambda: {
@@ -251,6 +263,17 @@ export function createConfig(environment: Environment): EnvironmentConfig {
       httpApiName: `${environment}-ragchat-http-api`,
     },
     
+    // EventBridge設定
+    eventbridge: {
+      eventRuleName: `${environment}-ragchat-user-enable-rule`,
+    },
+    
+    // CloudTrail証跡設定
+    cloudtrail: {
+      trailName: `${environment}-ragchat-cognito-user-enable-events`,
+      trailBucketName: `${environment}-ragchat-cloudtrail-cognito-logs`,
+    },
+    
     // Lambda Functions設定
     lambda: {
       ragPromptImagesFunctionName: `${environment}-ragchat-prompt-images-function`,
@@ -264,9 +287,9 @@ export function createConfig(environment: Environment): EnvironmentConfig {
       ragGetChatDetailFunctionName: `${environment}-ragchat-get-chat-detail-function`,
       cognitoSendmailFunctionEnv: {
         //承認メール管理者アドレス
-        ADMIN_EMAILS: 'admin@example.com',
+        ADMIN_EMAILS: 'oishi.t@cpinfo.jp',
         //システムメール送信アドレス
-        SYSTEM_EMAIL: 'system@example.com',
+        SYSTEM_EMAIL: 'system.ai.cpinfo.jp',
         SERVICE_URL: `${domainConfigs[environment]?.domainName}`
       },
     },

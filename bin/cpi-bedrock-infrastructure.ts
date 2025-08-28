@@ -39,8 +39,3 @@ const serviceStack = new RagchatServiceStack(app, `${environment}-RagchatService
   knowledgeBaseId: commonStack.knowledgeBase.attrKnowledgeBaseId,
   knowledgeBaseRegion: stackProps.env?.region,
 });
-
-// スタックレベルのタグを追加
-cdk.Tags.of(app).add('Environment', environment);
-cdk.Tags.of(app).add('ManagedBy', 'CDK');
-cdk.Tags.of(app).add('Project', 'ragchat-app');

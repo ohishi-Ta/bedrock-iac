@@ -36,86 +36,69 @@ export class IamRolesConstruct extends Construct {
   }
 
   private createLambdaGenerateRole(dynamoTable: dynamodb.Table): iam.Role {
-    const role = new iam.Role(this, 'LambdaGenerateRole', {
+    const lambdaGeneratePolicy = new iam.ManagedPolicy(this, 'LambdaGeneratePolicy', {
+      statements: [
+        new iam.PolicyStatement({
+          actions: ['dynamodb:PutItem', 'dynamodb:GetItem', 'dynamodb:DeleteItem', 'dynamodb:UpdateItem'],
+          resources: [dynamoTable.tableArn],
+        }),
+        new iam.PolicyStatement({
+          actions: ['bedrock:InvokeModelWithResponseStream', 'bedrock:GetInferenceProfile', 'bedrock:InvokeModel'],
+          resources: [
+            'arn:aws:bedrock:us-west-2:794038219704:inference-profile/us.amazon.nova-lite-v1:0',
+            'arn:aws:bedrock:*::foundation-model/amazon.nova-lite-v1:0',
+            'arn:aws:bedrock:us-west-2:794038219704:inference-profile/us.amazon.nova-pro-v1:0',
+            'arn:aws:bedrock:*::foundation-model/amazon.nova-pro-v1:0',
+            'arn:aws:bedrock:us-west-2:794038219704:inference-profile/us.anthropic.claude-3-7-sonnet-20250219-v1:0',
+            'arn:aws:bedrock:*::foundation-model/anthropic.claude-3-7-sonnet-20250219-v1:0',
+            'arn:aws:bedrock:us-west-2:794038219704:inference-profile/us.anthropic.claude-sonnet-4-20250514-v1:0',
+            'arn:aws:bedrock:*::foundation-model/anthropic.claude-sonnet-4-20250514-v1:0',
+            'arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-canvas-v1:0',
+            'arn:aws:bedrock:us-west-2::foundation-model/openai.gpt-oss-20b-1:0',
+            'arn:aws:bedrock:us-west-2::foundation-model/openai.gpt-oss-120b-1:0',
+          ],
+        }),
+        new iam.PolicyStatement({
+          actions: ['bedrock:Retrieve', 'bedrock:RetrieveAndGenerate'],
+          resources: [
+            'arn:aws:bedrock:ap-northeast-1:794038219704:knowledge-base/*',
+            'arn:aws:bedrock:ap-northeast-1:794038219704:knowledge-base/*/*',
+          ],
+        }),
+        new iam.PolicyStatement({
+          actions: ['bedrock:GetKnowledgeBase', 'bedrock:ListKnowledgeBases'],
+          resources: ['*'],
+        }),
+      ],
+    });
+
+    return new iam.Role(this, 'LambdaGenerateRole', {
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
       managedPolicies: [
         iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
         iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonS3FullAccess'),
+        lambdaGeneratePolicy,
       ],
     });
-
-    role.addToPolicy(new iam.PolicyStatement({
-      actions: [
-        'dynamodb:PutItem',
-        'dynamodb:GetItem',
-        'dynamodb:DeleteItem',
-        'dynamodb:UpdateItem',
-      ],
-      resources: [dynamoTable.tableArn],
-    }));
-
-    role.addToPolicy(new iam.PolicyStatement({
-      actions: [
-        'bedrock:InvokeModelWithResponseStream',
-        'bedrock:GetInferenceProfile',
-        'bedrock:InvokeModel',
-      ],
-      resources: [
-        'arn:aws:bedrock:us-west-2:794038219704:inference-profile/us.amazon.nova-lite-v1:0',
-        'arn:aws:bedrock:*::foundation-model/amazon.nova-lite-v1:0',
-        'arn:aws:bedrock:us-west-2:794038219704:inference-profile/us.amazon.nova-pro-v1:0',
-        'arn:aws:bedrock:*::foundation-model/amazon.nova-pro-v1:0',
-        'arn:aws:bedrock:us-west-2:794038219704:inference-profile/us.anthropic.claude-3-7-sonnet-20250219-v1:0',
-        'arn:aws:bedrock:*::foundation-model/anthropic.claude-3-7-sonnet-20250219-v1:0',
-        'arn:aws:bedrock:us-west-2:794038219704:inference-profile/us.anthropic.claude-sonnet-4-20250514-v1:0',
-        'arn:aws:bedrock:*::foundation-model/anthropic.claude-sonnet-4-20250514-v1:0',
-        'arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-canvas-v1:0',
-        'arn:aws:bedrock:us-west-2::foundation-model/openai.gpt-oss-20b-1:0',
-        'arn:aws:bedrock:us-west-2::foundation-model/openai.gpt-oss-120b-1:0'
-      ],
-    }));
-
-    role.addToPolicy(new iam.PolicyStatement({
-      actions: [
-        'bedrock:Retrieve',
-        'bedrock:RetrieveAndGenerate',
-      ],
-      resources: [
-        'arn:aws:bedrock:ap-northeast-1:794038219704:knowledge-base/*',
-        'arn:aws:bedrock:ap-northeast-1:794038219704:knowledge-base/*/*',
-      ],
-    }));
-
-    role.addToPolicy(new iam.PolicyStatement({
-      actions: [
-        'bedrock:GetKnowledgeBase',
-        'bedrock:ListKnowledgeBases',
-      ],
-      resources: ['*'],
-    }));
-
-    return role;
   }
 
   private createLambdaGetChatRole(dynamoTable: dynamodb.Table): iam.Role {
-    const role = new iam.Role(this, 'LambdaGetChatRole', {
-      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
-      managedPolicies: [
-        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
+    const lambdaGetChatPolicy = new iam.ManagedPolicy(this, 'LambdaGetChatPolicy', {
+      statements: [
+        new iam.PolicyStatement({
+          actions: ['dynamodb:PutItem', 'dynamodb:GetItem', 'dynamodb:DeleteItem', 'dynamodb:UpdateItem'],
+          resources: [dynamoTable.tableArn],
+        }),
       ],
     });
 
-    role.addToPolicy(new iam.PolicyStatement({
-      actions: [
-        'dynamodb:PutItem',
-        'dynamodb:GetItem',
-        'dynamodb:DeleteItem',
-        'dynamodb:UpdateItem',
+    return new iam.Role(this, 'LambdaGetChatRole', {
+      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
+        lambdaGetChatPolicy,
       ],
-      resources: [dynamoTable.tableArn],
-    }));
-
-    return role;
+    });
   }
 
   private createLambdaPromptImagesRole(): iam.Role {
@@ -129,53 +112,46 @@ export class IamRolesConstruct extends Construct {
   }
 
   private createLambdaS3ImagesRole(dynamoTable: dynamodb.Table): iam.Role {
-    const role = new iam.Role(this, 'LambdaS3ImagesRole', {
+    const lambdaS3ImagesPolicy = new iam.ManagedPolicy(this, 'LambdaS3ImagesPolicy', {
+      statements: [
+        new iam.PolicyStatement({
+          actions: ['dynamodb:PutItem', 'dynamodb:GetItem', 'dynamodb:DeleteItem', 'dynamodb:UpdateItem'],
+          resources: [dynamoTable.tableArn],
+        }),
+      ],
+    });
+
+    return new iam.Role(this, 'LambdaS3ImagesRole', {
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
       managedPolicies: [
         iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
         iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonS3FullAccess'),
+        lambdaS3ImagesPolicy,
       ],
     });
-
-    role.addToPolicy(new iam.PolicyStatement({
-      actions: [
-        'dynamodb:PutItem',
-        'dynamodb:GetItem',
-        'dynamodb:DeleteItem',
-        'dynamodb:UpdateItem',
-      ],
-      resources: [dynamoTable.tableArn],
-    }));
-
-    return role;
   }
 
   private createLambdaCognitoSESRole(userPool: cognito.UserPool): iam.Role {
-    const role = new iam.Role(this, 'LambdaCognitoSESRole', {
-      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
-      managedPolicies: [
-        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
+    const lambdaCognitoSESPolicy = new iam.ManagedPolicy(this, 'LambdaCognitoSESPolicy', {
+      statements: [
+        new iam.PolicyStatement({
+          actions: ['ses:SendEmail', 'ses:SendRawEmail'],
+          resources: [`arn:aws:ses:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:identity/*`],
+        }),
+        new iam.PolicyStatement({
+          actions: ['cognito-idp:AdminDisableUser', 'cognito-idp:AdminGetUser', 'cognito-idp:ListUsers'],
+          resources: [userPool.userPoolArn],
+        }),
       ],
     });
 
-    role.addToPolicy(new iam.PolicyStatement({
-      actions: [
-        'ses:SendEmail',
-        'ses:SendRawEmail',
+    return new iam.Role(this, 'LambdaCognitoSESRole', {
+      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
+        lambdaCognitoSESPolicy,
       ],
-      resources: [`arn:aws:ses:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:identity/*`],
-    }));
-
-    role.addToPolicy(new iam.PolicyStatement({
-      actions: [
-        'cognito-idp:AdminDisableUser',
-        'cognito-idp:AdminGetUser',
-        'cognito-idp:ListUsers',
-      ],
-      resources: [userPool.userPoolArn],
-    }));
-
-    return role;
+    });
   }
 
   private applyTags(tags: { [key: string]: string }): void {

@@ -9,6 +9,9 @@ import { CloudFrontConstruct } from '../constructs/cloudfront-construct';
 import { IamRolesConstruct } from '../constructs/iam-roles-construct';
 import { LambdaConstruct } from '../constructs/lambda-construct';
 import { ApiGatewayConstruct } from '../constructs/api-gateway-construct';
+import { EventBridgeConstruct } from '../constructs/eventbridge-construct';
+import { CloudTrailConstruct } from '../constructs/cloudtrail-construct';
+
 
 export interface RagchatServiceStackProps extends cdk.StackProps {
   config: EnvironmentConfig;
@@ -82,6 +85,18 @@ export class RagchatServiceStack extends cdk.Stack {
         searchChatsFunction: lambdaConstruct.searchChatsFunction,
         ragGetChatDetailFunction: lambdaConstruct.ragGetChatDetailFunction,
       },
+    });
+
+    // CloudTrail（EventBridgeのイベント監視に必要）
+    const cloudTrailConstruct = new CloudTrailConstruct(this, 'CloudTrail', {
+      config,
+    });
+
+    // EventBridge - Cognito AdminEnableUser イベントを監視
+    const eventBridgeConstruct = new EventBridgeConstruct(this, 'EventBridge', {
+      config,
+      userPool: cognitoConstruct.userPool,
+      targetLambdaFunction: lambdaConstruct.cognitoUserEnableFunction,
     });
 
     // Stack Outputs
