@@ -37,6 +37,10 @@ export class LambdaConstruct extends Construct {
   public readonly ragSseStreamFunction: lambda.Function;
   public readonly ragGetChatDetailFunction: lambda.Function;
 
+  // Function URLsを保持するプロパティ
+  public readonly ragGenerateImageFunctionUrl: lambda.FunctionUrl;
+  public readonly ragSseStreamFunctionUrl: lambda.FunctionUrl;
+
   constructor(scope: Construct, id: string, props: LambdaConstructProps) {
     super(scope, id);
 
@@ -112,6 +116,17 @@ export class LambdaConstruct extends Construct {
       },
     });
 
+    this.ragGenerateImageFunctionUrl = this.ragGenerateImageFunction.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.NONE,
+      invokeMode: lambda.InvokeMode.BUFFERED,
+      cors: {
+        allowCredentials: false,
+        allowedHeaders: ['*'],
+        allowedMethods: [lambda.HttpMethod.ALL],
+        allowedOrigins: ['*'],
+      },
+    });
+
     // 6. Rag Get Chats Function
     this.ragGetChatsFunction = new lambda.Function(this, 'RagGetChatsFunction', {
       functionName: config.lambda.ragGetChatsFunctionName,
@@ -161,7 +176,7 @@ export class LambdaConstruct extends Construct {
       },
     });
 
-    this.ragSseStreamFunction.addFunctionUrl({
+    this.ragSseStreamFunctionUrl = this.ragSseStreamFunction.addFunctionUrl({
       authType: lambda.FunctionUrlAuthType.NONE,
       invokeMode: lambda.InvokeMode.RESPONSE_STREAM,
       cors: {

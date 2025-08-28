@@ -24,6 +24,7 @@ export interface ApiGatewayConstructProps {
 
 export class ApiGatewayConstruct extends Construct {
   public readonly httpApi: apigatewayv2.HttpApi;
+  public readonly stage: apigatewayv2.HttpStage;
   public readonly jwtAuthorizer: apigatewayv2Auth.HttpJwtAuthorizer;
 
   constructor(scope: Construct, id: string, props: ApiGatewayConstructProps) {
@@ -42,6 +43,21 @@ export class ApiGatewayConstruct extends Construct {
           apigatewayv2.CorsHttpMethod.OPTIONS,
           apigatewayv2.CorsHttpMethod.DELETE,
         ],
+        allowHeaders: [
+          'Authorization',
+          `content-type`
+        ],
+      },
+    });
+    
+   this.stage = new apigatewayv2.HttpStage(this, `${config.environment.charAt(0).toUpperCase() + config.environment.slice(1)}Stage`, {
+      httpApi: this.httpApi,
+      stageName: config.environment,
+      autoDeploy: true,
+      description: `${config.environment} stage for RAG Chat API`,
+      throttle: {
+        rateLimit: 1000,
+        burstLimit: 2000,
       },
     });
 

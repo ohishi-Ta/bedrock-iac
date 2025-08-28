@@ -86,9 +86,16 @@ export class RagchatServiceStack extends cdk.Stack {
       exportName: `${this.stackName}-CognitoUserPoolClientId`,
     });
 
+    // API Gateway HTTP API URL with dynamic stage
+    new cdk.CfnOutput(this, 'HttpApiEndpoint', {
+      description: `Invoke URL for the HttpApi (${config.environment} stage)`,
+      value: `${apiGatewayConstruct.httpApi.apiEndpoint}/${config.environment}`,
+      exportName: `${this.stackName}-HttpApiEndpoint`,
+    });
+
     new cdk.CfnOutput(this, 'ApiGatewayHttpApiUrl', {
-      description: 'API Gateway HTTP API URL',
-      value: apiGatewayConstruct.httpApi.apiEndpoint,
+      description: 'API Gateway HTTP API base URL',
+      value: `${apiGatewayConstruct.httpApi.apiEndpoint}/${config.environment}`,
       exportName: `${this.stackName}-ApiGatewayHttpApiUrl`,
     });
 
@@ -98,17 +105,15 @@ export class RagchatServiceStack extends cdk.Stack {
       exportName: `${this.stackName}-CloudFrontDistributionUrl`,
     });
 
-    // Function URLの出力は実際のFunction URLを取得する必要があります
-    // 現在は placeholder として API Gateway URLを使用
     new cdk.CfnOutput(this, 'RagGenerateImageFunctionUrl', {
       description: 'RAG Generate Image Function URL',
-      value: 'Function URL will be generated after deployment',
+      value: lambdaConstruct.ragGenerateImageFunctionUrl.url,
       exportName: `${this.stackName}-RagGenerateImageFunctionUrl`,
     });
 
     new cdk.CfnOutput(this, 'RagSseStreamFunctionUrl', {
       description: 'RAG SSE Stream Function URL',
-      value: 'Function URL will be generated after deployment',
+      value: lambdaConstruct.ragSseStreamFunctionUrl.url,
       exportName: `${this.stackName}-RagSseStreamFunctionUrl`,
     });
 

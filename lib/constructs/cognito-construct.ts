@@ -22,7 +22,11 @@ export class CognitoConstruct extends Construct {
     // Cognito User Pool - 設定から命名取得
     this.userPool = new cognito.UserPool(this, 'RagAppUserPool', {
       userPoolName: config.cognito.userPoolName,
+      // セルフサービスのサインアップを有効化
+      selfSignUpEnabled: true,
+      // 自動検証設定
       autoVerify: { email: true },
+      // 標準属性設定
       standardAttributes: {
         email: { required: true, mutable: true },
       },
@@ -34,6 +38,8 @@ export class CognitoConstruct extends Construct {
         requireDigits: true,
         requireSymbols: false,
       },
+      // アカウント復旧設定
+      accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
       // 削除ポリシー設定
       removalPolicy: config.environment === 'dev' 
         ? RemovalPolicy.DESTROY 
