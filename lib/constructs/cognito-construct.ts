@@ -38,8 +38,8 @@ export class CognitoConstruct extends Construct {
         requireDigits: true,
         requireSymbols: false,
       },
-      // アカウント復旧設定
-      accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
+    // アカウント復旧設定
+    accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
       // 削除ポリシー設定
       removalPolicy: config.environment === 'dev' 
         ? RemovalPolicy.DESTROY 
